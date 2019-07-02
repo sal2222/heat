@@ -12,15 +12,136 @@ library(sf)
 library(tidyverse)
 library(viridis)
 library(rvest)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+library(lwgeom)
 
 ```
 
 ## Load MIRTA Data
-
 Accessed from: https://catalog.data.gov/dataset/military-installations-ranges-and-training-areas
 Metadata updated date: January 18, 2017
+```{r load_shapefile}
+#Ref: http://strimas.com/r/tidy-sf/
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+
+# convert to SpatialPolygonsDataFrame
+# bases_sp <- as(bases, "Spatial")
+
+class(bases)
+glimpse(bases)
+st_crs(bases)
+
+as_tibble(bases)
+```
+
+
+## Select Active Army Installations
+
+Note: FSH, TX listed under Air Force; Fort Benning split between GA and AL
+```{r}
+bases %>% 
+  filter(component == "Army Active") %>% 
+  .$site_name
+
+```
+
+
+## Feature information
+```{r}
+bases_geom <- st_geometry(bases)
+st_geometry(bases) %>% class()
+attributes(bases_geom)
+bases_geom[[1]] %>% class
+```
+
+
+## Inspection plots
+```{r}
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = world, fill = NA) +
+  geom_sf(data = bases, color = "darkgreen", fill = "lightgreen") +
+  ggtitle("DoD Installations") +
+  theme_bw()
+
+```
+
+## Select specific installations
 
 ```{r}
-#bases <- st_read(~installations_ranges/"MIRTA_Boundaries.shp")
+army_select <-
+bases %>% 
+  filter(.$site_name %in% c("Fort Bragg", "Fort Benning GA", "Fort Benning", "Fort Campbell" ))
 
+ggplot(army_select) +
+  ggtitle("Bragg. Benning, Campbell") +
+  geom_sf() +
+  theme_bw()
+
+bragg <-
+bases %>% 
+  filter(.$site_name == "Fort Bragg")
+
+ggplot(bragg) +
+  ggtitle("Fort Bragg") +
+  geom_sf() +
+  theme_bw()
+
+
+ggplot(bases %>% 
+  filter(.$site_name %in% c("Fort Benning GA", "Fort Benning"))) +
+  ggtitle("Fort Benning") +
+  geom_sf() +
+  theme_bw()
+
+```
+
+
+## Load NLDAS grids
+
+```{r}
+nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
+  janitor::clean_names()
+
+class(nldas_grid)
+glimpse(nldas_grid)
+st_crs(nldas_grid)
+
+as_tibble(nldas_grid)
+
+
+
+```
+
+
+## NLDAS and Installation Grid Overlap and Weighted Averages
+
+```{r}
+
+bragg_nldas <-
+  st_intersection(bragg, nldas_grid) %>% 
+  mutate(area = sf::st_area(.),
+         weight = area / sum(area))
+
+sum(bragg_nldas$area)
+sum(bragg_nldas$weight)
+
+bragg_nldas
+
+ggplot(bragg_nldas) + 
+  ggtitle("Fort Bragg NLDAS grids") +
+  geom_sf() +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
+  theme_bw()
+
+st_area(bragg_nldas) 
+  
+```
 
