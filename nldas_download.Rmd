@@ -1,0 +1,77 @@
+---
+title: "nldas_download"
+author: "SL"
+date: "July 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+library(tidyverse)
+# library(installr)
+# installr::system.PATH()
+
+library(ncdf4)
+```
+
+```{r wget_path}
+# system("C:\Program Files (x86)wget-1.20.3-win64\wget )
+```
+
+
+Earthdata.nasa.gov
+Collection: 
+NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H) at GES DISC
+Homepage: https://ldas.gsfc.nasa.gov/nldas/
+Metadata: https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt
+
+Distribution URLs: 
+
+- Simple Subset Wizard (SSW): https://disc.gsfc.nasa.gov/SSW/#keywords=NLDAS_FORA0125_H
+(Date range, bounding box, select variables)
+
+
+SSW Steps:
+
+1. Collection Launch page: https://disc.gsfc.nasa.gov/datasets/NLDAS_FORA0125_H_002/summary
+2. Data Access -> Simple Subset Wizard
+3. Enter Date Range and Spatial Bounding Box coordinates 
+  (S, W, N, E  -->  ymin, xmin, ymax, xmax)
+4. Click "Search for data sets"" box
+5. Select variables from dropdown (all 11); choice of "GRIB" or "netCDF" -> netCDF
+6. Click "subset selected data sets"
+7. Click "View selected data sets"
+8. Download Manager: https://chrome.google.com/webstore/detail/chrono-download-manager
+  - Chrono Sniffer -> Application -> select links (120 in 5-day week test)
+  - select all
+  - click "download all" 
+  - about 6 minutes for 120 files
+  
+  
+  
+```{r bragg_test_nldas}
+
+# https://www.r-bloggers.com/a-netcdf-4-in-r-cheatsheet/
+# Retrieve a list of nc files in data folder:
+file_list <- list.files(path = "nldas_data/bragg_test/", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
+file_list
+
+
+# Open a connection to the first file in  list
+nc1 <- ncdf4::nc_open(paste0("nldas_data/bragg_test/", file_list[1]))
+print(nc1)
+
+# Get a list of the NetCDF's R attributes:
+
+```
+
+
+
+
+
+

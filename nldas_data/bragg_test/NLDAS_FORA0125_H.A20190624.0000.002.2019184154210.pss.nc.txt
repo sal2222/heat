@@ -1,0 +1,205 @@
+[1] "nldas_data/bragg_test/NLDAS_FORA0125_H.A20190624.0000.002.2019184154210.pss.nc.txt"
+ [1] "filename"    "writable"    "id"          "safemode"    "format"      "is_GMT"      "groups"     
+ [8] "fqgn2Rindex" "ndims"       "natts"       "dim"         "unlimdimid"  "nvars"       "var"        
+ [1] "filename"    "writable"    "id"          "safemode"    "format"      "is_GMT"      "groups"     
+ [8] "fqgn2Rindex" "ndims"       "natts"       "dim"         "unlimdimid"  "nvars"       "var"        
+$names
+ [1] "filename"    "writable"    "id"          "safemode"    "format"      "is_GMT"      "groups"     
+ [8] "fqgn2Rindex" "ndims"       "natts"       "dim"         "unlimdimid"  "nvars"       "var"        
+
+$class
+[1] "ncdf4"
+
+File nldas_data/bragg_test/NLDAS_FORA0125_H.A20190624.0000.002.2019184154210.pss.nc (NC_FORMAT_CLASSIC):
+
+     11 variables (excluding dimension variables):
+        float PEVAPsfc_110_SFC_acc1h[lon_110,lat_110]   
+            initial_time: 06/23/2019 (23:00)
+            forecast_time_units: hours
+            forecast_time: 1
+            model: MESO ETA Model
+            parameter_number: 228
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: kg/m^2
+            long_name: Potential evaporation
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float DLWRFsfc_110_SFC[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            model: MESO ETA Model
+            parameter_number: 205
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: W/m^2
+            long_name: LW radiation flux downwards (surface)
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float DSWRFsfc_110_SFC[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            model: MESO ETA Model
+            parameter_number: 204
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: W/m^2
+            long_name: SW radiation flux downwards (surface)
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float CAPE180_0mb_110_SPDY[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            level: 180
+             level: 0
+            model: MESO ETA Model
+            parameter_number: 157
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 116
+            _FillValue: 1.00000002004088e+20
+            units: J/kg
+            long_name: 180-0 mb above ground Convective Available Potential Energy
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float CONVfracsfc_110_SFC_acc1h[lon_110,lat_110]   
+            initial_time: 06/23/2019 (23:00)
+            forecast_time_units: hours
+            forecast_time: 1
+            model: MESO ETA Model
+            parameter_number: 153
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: unitless
+            long_name: Fraction of total precipitation that is convective
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float APCPsfc_110_SFC_acc1h[lon_110,lat_110]   
+            initial_time: 06/23/2019 (23:00)
+            forecast_time_units: hours
+            forecast_time: 1
+            model: MESO ETA Model
+            parameter_number: 61
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: kg/m^2
+            long_name: Precipitation hourly total
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float SPFH2m_110_HTGL[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            level: 2
+            model: MESO ETA Model
+            parameter_number: 51
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 105
+            _FillValue: 1.00000002004088e+20
+            units: kg/kg
+            long_name: 2-m above ground Specific humidity
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float VGRD10m_110_HTGL[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            level: 10
+            model: MESO ETA Model
+            parameter_number: 34
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 105
+            _FillValue: 1.00000002004088e+20
+            units: m/s
+            long_name: 10-m above ground Meridional wind speed
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float UGRD10m_110_HTGL[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            level: 10
+            model: MESO ETA Model
+            parameter_number: 33
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 105
+            _FillValue: 1.00000002004088e+20
+            units: m/s
+            long_name: 10-m above ground Zonal wind speed
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float TMP2m_110_HTGL[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            level: 2
+            model: MESO ETA Model
+            parameter_number: 11
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 105
+            _FillValue: 1.00000002004088e+20
+            units: K
+            long_name: 2-m above ground Temperature
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+        float PRESsfc_110_SFC[lon_110,lat_110]   
+            initial_time: 06/24/2019 (00:00)
+            forecast_time_units: hours
+            forecast_time: 0
+            model: MESO ETA Model
+            parameter_number: 1
+            parameter_table_version: 130
+            gds_grid_type: 0
+            level_indicator: 1
+            _FillValue: 1.00000002004088e+20
+            units: Pa
+            long_name: Surface pressure
+            center: US National Weather Service - NCEP (WMC)
+            sub_center: NESDIS Office of Research and Applications
+
+     2 dimensions:
+        lat_110  Size:4
+            La1: 34.9379997253418
+            Lo1: -79.4380035400391
+            La2: 35.3129997253418
+            Lo2: -78.8130035400391
+            Di: 0.125
+            Dj: 0.125
+            units: degrees_north
+            GridType: Cylindrical Equidistant Projection Grid
+            long_name: latitude
+        lon_110  Size:6
+            La1: 34.9379997253418
+            Lo1: -79.4380035400391
+            La2: 35.3129997253418
+            Lo2: -78.8130035400391
+            Di: 0.125
+            Dj: 0.125
+            units: degrees_east
+            GridType: Cylindrical Equidistant Projection Grid
+            long_name: longitude
+
+    6 global attributes:
+        creation_date: Wed Jul  3 16:05:44 GMT 2019
+        NCL_Version: 5.1.0
+        system: Linux gs6102dsc-hydro1.gesdisc.eosdis.nasa.gov 2.6.32-754.14.2.el6.x86_64 #1 SMP Tue May 14 19:35:42 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+        conventions: None
+        grib_source: output.grb
+        title: NCL: convert-GRIB-to-netCDF
