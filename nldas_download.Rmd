@@ -5,12 +5,9 @@ date: "July 2, 2019"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-
-```{r}
 
 library(tidyverse)
 # library(installr)
@@ -18,6 +15,7 @@ library(tidyverse)
 
 library(ncdf4)
 ```
+
 
 ```{r wget_path}
 # system("C:\Program Files (x86)wget-1.20.3-win64\wget )
@@ -62,16 +60,108 @@ file_list <- list.files(path = "nldas_data/bragg_test/", pattern = "^.*\\.(nc|NC
 file_list
 
 
+
+```
+
+## Inspect first ncdf file
+```{r inspect_first}
+
 # Open a connection to the first file in  list
 nc1 <- ncdf4::nc_open(paste0("nldas_data/bragg_test/", file_list[1]))
 print(nc1)
 
+
 # Get a list of the NetCDF's R attributes:
+attributes(nc1)$names
+
+print(paste("The file has",nc1$nvars,"variables,",nc1$ndims,"dimensions and",nc1$natts,"NetCDF attributes"))
+
+# Get a list of the nc variable names.
+attributes(nc1$var)$names
+
+# View temperature variable's nc attributes
+ncdf4::ncatt_get(nc1, attributes(nc1$var)$names[10])
+
+# Retrieve a matrix of the data using the ncvar_get function
+temp <- ncvar_get(nc1, attributes(nc1$var)$names[10])
+
+# Print the data's dimensions
+dim(temp)
+
+# Retrieve the latitude and longitude dimensions
+attributes(nc1$dim)$names
+
+nc1_lat <- ncvar_get(nc1, attributes(nc1$dim)$names[1])
+nc1_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
+
+print(paste(dim(nc1_lat), "latitudes and", dim(nc1_lon), "longitudes"))
+```
+
+
+## Variable matrix by lat/long
+```{r}
+# Change the dimension names of our matrix to "lon" and "lat" 
+# Change the row and column names to the latitude and longitude values
+
+dimnames(temp) <- 
+  list(lon = nc1_lon, lat = nc1_lat) 
+
+temp
+
+# Transpose matrix
+
+temp <- t(temp)
+temp
 
 ```
 
 
+## Global attributes
+
+```{r}
+# Retrieve global attributes
+nc1_atts <- ncatt_get(nc1, 0)
+nc1_atts
 
 
+# Close the connection to the nc file
+nc_close(nc1)
+```
 
+
+## Processing multiple netCDF files
+
+```{r}
+# Define our function
+process_nc <- function(files) {
+    # iterate through the nc
+    for (i in 1:length(files)) {
+        # open a conneciton to the ith nc file
+        nc_tmp <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        # store values from variables and atributes
+        nc_temp <- ncvar_get(nc_tmp, attributes(nc_tmp$var)$names[10])
+        nc_lat <- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[1])
+        nc_lon <- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[2])
+        nc_atts <- ncatt_get(nc_tmp, 0)
+        # close the connection sice were finished
+        nc_close(nc_tmp)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_temp) <- list(lon = nc_lon, lat = nc_lat)
+        tmp_temp_df <- reshape2::melt(nc_temp, value.name = "temp")
+        # set the name of my new variable and bind the new data to it
+        if (exists("temp_data")) {
+            temp_data <- bind_rows(temp_data, tmp_temp_df)
+        }else{
+            temp_data <- tmp_temp_df
+        }
+      }
+
+    return(temp_data)
+}
+
+
+data <- process_nc(file_list)
+
+as_tibble(data)
+```
 

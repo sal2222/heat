@@ -196,28 +196,6 @@ $(document).ready(function () {
 </div>
 
 
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## Warning: package 'tidyverse' was built under R version 3.5.3</code></pre>
-<pre><code>## -- Attaching packages -------------------------------------------------------------------------- tidyverse 1.2.1 --</code></pre>
-<pre><code>## v ggplot2 3.1.1     v purrr   0.3.2
-## v tibble  2.1.2     v dplyr   0.8.1
-## v tidyr   0.8.3     v stringr 1.4.0
-## v readr   1.3.1     v forcats 0.4.0</code></pre>
-<pre><code>## Warning: package 'ggplot2' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'tidyr' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'readr' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'purrr' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'dplyr' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'stringr' was built under R version 3.5.3</code></pre>
-<pre><code>## Warning: package 'forcats' was built under R version 3.5.3</code></pre>
-<pre><code>## -- Conflicts ----------------------------------------------------------------------------- tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code># library(installr)
-# installr::system.PATH()
-
-library(ncdf4)</code></pre>
-<pre><code>## Warning: package 'ncdf4' was built under R version 3.5.3</code></pre>
 <pre class="r"><code># system(&quot;C:\Program Files (x86)wget-1.20.3-win64\wget )</code></pre>
 <p>Earthdata.nasa.gov Collection: NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H) at GES DISC Homepage: <a href="https://ldas.gsfc.nasa.gov/nldas/" class="uri">https://ldas.gsfc.nasa.gov/nldas/</a> Metadata: <a href="https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt" class="uri">https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt</a></p>
 <p>Distribution URLs:</p>
@@ -365,6 +343,8 @@ file_list</code></pre>
 ## [118] &quot;NLDAS_FORA0125_H.A20190628.2100.002.2019184154210.pss.nc&quot;
 ## [119] &quot;NLDAS_FORA0125_H.A20190628.2200.002.2019184154210.pss.nc&quot;
 ## [120] &quot;NLDAS_FORA0125_H.A20190628.2300.002.2019184154210.pss.nc&quot;</code></pre>
+<div id="inspect-first-ncdf-file" class="section level2">
+<h2>Inspect first ncdf file</h2>
 <pre class="r"><code># Open a connection to the first file in  list
 nc1 &lt;- ncdf4::nc_open(paste0(&quot;nldas_data/bragg_test/&quot;, file_list[1]))
 print(nc1)</code></pre>
@@ -561,7 +541,194 @@ print(nc1)</code></pre>
 ##         conventions: None
 ##         grib_source: output.grb
 ##         title: NCL: convert-GRIB-to-netCDF</code></pre>
-<pre class="r"><code># Get a list of the NetCDF's R attributes:</code></pre>
+<pre class="r"><code># Get a list of the NetCDF's R attributes:
+attributes(nc1)$names</code></pre>
+<pre><code>##  [1] &quot;filename&quot;    &quot;writable&quot;    &quot;id&quot;          &quot;safemode&quot;    &quot;format&quot;     
+##  [6] &quot;is_GMT&quot;      &quot;groups&quot;      &quot;fqgn2Rindex&quot; &quot;ndims&quot;       &quot;natts&quot;      
+## [11] &quot;dim&quot;         &quot;unlimdimid&quot;  &quot;nvars&quot;       &quot;var&quot;</code></pre>
+<pre class="r"><code>print(paste(&quot;The file has&quot;,nc1$nvars,&quot;variables,&quot;,nc1$ndims,&quot;dimensions and&quot;,nc1$natts,&quot;NetCDF attributes&quot;))</code></pre>
+<pre><code>## [1] &quot;The file has 11 variables, 2 dimensions and 6 NetCDF attributes&quot;</code></pre>
+<pre class="r"><code># Get a list of the nc variable names.
+attributes(nc1$var)$names</code></pre>
+<pre><code>##  [1] &quot;PEVAPsfc_110_SFC_acc1h&quot;    &quot;DLWRFsfc_110_SFC&quot;         
+##  [3] &quot;DSWRFsfc_110_SFC&quot;          &quot;CAPE180_0mb_110_SPDY&quot;     
+##  [5] &quot;CONVfracsfc_110_SFC_acc1h&quot; &quot;APCPsfc_110_SFC_acc1h&quot;    
+##  [7] &quot;SPFH2m_110_HTGL&quot;           &quot;VGRD10m_110_HTGL&quot;         
+##  [9] &quot;UGRD10m_110_HTGL&quot;          &quot;TMP2m_110_HTGL&quot;           
+## [11] &quot;PRESsfc_110_SFC&quot;</code></pre>
+<pre class="r"><code># View temperature variable's nc attributes
+ncdf4::ncatt_get(nc1, attributes(nc1$var)$names[10])</code></pre>
+<pre><code>## $initial_time
+## [1] &quot;06/24/2019 (00:00)&quot;
+## 
+## $forecast_time_units
+## [1] &quot;hours&quot;
+## 
+## $forecast_time
+## [1] 0
+## 
+## $level
+## [1] 2
+## 
+## $model
+## [1] &quot;MESO ETA Model&quot;
+## 
+## $parameter_number
+## [1] 11
+## 
+## $parameter_table_version
+## [1] 130
+## 
+## $gds_grid_type
+## [1] 0
+## 
+## $level_indicator
+## [1] 105
+## 
+## $`_FillValue`
+## [1] 1e+20
+## 
+## $units
+## [1] &quot;K&quot;
+## 
+## $long_name
+## [1] &quot;2-m above ground Temperature&quot;
+## 
+## $center
+## [1] &quot;US National Weather Service - NCEP (WMC)&quot;
+## 
+## $sub_center
+## [1] &quot;NESDIS Office of Research and Applications&quot;</code></pre>
+<pre class="r"><code># Retrieve a matrix of the data using the ncvar_get function
+temp &lt;- ncvar_get(nc1, attributes(nc1$var)$names[10])
+
+# Print the data's dimensions
+dim(temp)</code></pre>
+<pre><code>## [1] 6 4</code></pre>
+<pre class="r"><code># Retrieve the latitude and longitude dimensions
+attributes(nc1$dim)$names</code></pre>
+<pre><code>## [1] &quot;lat_110&quot; &quot;lon_110&quot;</code></pre>
+<pre class="r"><code>nc1_lat &lt;- ncvar_get(nc1, attributes(nc1$dim)$names[1])
+nc1_lon &lt;- ncvar_get(nc1, attributes(nc1$dim)$names[2])
+
+print(paste(dim(nc1_lat), &quot;latitudes and&quot;, dim(nc1_lon), &quot;longitudes&quot;))</code></pre>
+<pre><code>## [1] &quot;4 latitudes and 6 longitudes&quot;</code></pre>
+</div>
+<div id="variable-matrix-by-latlong" class="section level2">
+<h2>Variable matrix by lat/long</h2>
+<pre class="r"><code># Change the dimension names of our matrix to &quot;lon&quot; and &quot;lat&quot; 
+# Change the row and column names to the latitude and longitude values
+
+dimnames(temp) &lt;- 
+  list(lon = nc1_lon, lat = nc1_lat) 
+
+temp</code></pre>
+<pre><code>##                    lat
+## lon                 34.9379997253418 35.0629997253418 35.1879997253418
+##   -79.4380035400391           301.90           301.37           300.78
+##   -79.3130035400391           301.96           301.59           301.00
+##   -79.1880035400391           301.89           301.57           301.01
+##   -79.0630035400391           301.67           301.38           300.89
+##   -78.9380035400391           301.46           301.29           300.94
+##   -78.8130035400391           301.27           301.29           301.14
+##                    lat
+## lon                 35.3129997253418
+##   -79.4380035400391           300.57
+##   -79.3130035400391           300.54
+##   -79.1880035400391           300.33
+##   -79.0630035400391           300.33
+##   -78.9380035400391           300.62
+##   -78.8130035400391           300.84</code></pre>
+<pre class="r"><code># Transpose matrix
+
+temp &lt;- t(temp)
+temp</code></pre>
+<pre><code>##                   lon
+## lat                -79.4380035400391 -79.3130035400391 -79.1880035400391
+##   34.9379997253418            301.90            301.96            301.89
+##   35.0629997253418            301.37            301.59            301.57
+##   35.1879997253418            300.78            301.00            301.01
+##   35.3129997253418            300.57            300.54            300.33
+##                   lon
+## lat                -79.0630035400391 -78.9380035400391 -78.8130035400391
+##   34.9379997253418            301.67            301.46            301.27
+##   35.0629997253418            301.38            301.29            301.29
+##   35.1879997253418            300.89            300.94            301.14
+##   35.3129997253418            300.33            300.62            300.84</code></pre>
+</div>
+<div id="global-attributes" class="section level2">
+<h2>Global attributes</h2>
+<pre class="r"><code># Retrieve global attributes
+nc1_atts &lt;- ncatt_get(nc1, 0)
+nc1_atts</code></pre>
+<pre><code>## $creation_date
+## [1] &quot;Wed Jul  3 16:05:44 GMT 2019&quot;
+## 
+## $NCL_Version
+## [1] &quot;5.1.0&quot;
+## 
+## $system
+## [1] &quot;Linux gs6102dsc-hydro1.gesdisc.eosdis.nasa.gov 2.6.32-754.14.2.el6.x86_64 #1 SMP Tue May 14 19:35:42 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux&quot;
+## 
+## $conventions
+## [1] &quot;None&quot;
+## 
+## $grib_source
+## [1] &quot;output.grb&quot;
+## 
+## $title
+## [1] &quot;NCL: convert-GRIB-to-netCDF&quot;</code></pre>
+<pre class="r"><code># Close the connection to the nc file
+nc_close(nc1)</code></pre>
+</div>
+<div id="processing-multiple-netcdf-files" class="section level2">
+<h2>Processing multiple netCDF files</h2>
+<pre class="r"><code># Define our function
+process_nc &lt;- function(files) {
+    # iterate through the nc
+    for (i in 1:length(files)) {
+        # open a conneciton to the ith nc file
+        nc_tmp &lt;- nc_open(paste0(&quot;nldas_data/bragg_test/&quot;, files[i]))
+        # store values from variables and atributes
+        nc_temp &lt;- ncvar_get(nc_tmp, attributes(nc_tmp$var)$names[10])
+        nc_lat &lt;- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[1])
+        nc_lon &lt;- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[2])
+        nc_atts &lt;- ncatt_get(nc_tmp, 0)
+        # close the connection sice were finished
+        nc_close(nc_tmp)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_temp) &lt;- list(lon = nc_lon, lat = nc_lat)
+        tmp_temp_df &lt;- reshape2::melt(nc_temp, value.name = &quot;temp&quot;)
+        # set the name of my new variable and bind the new data to it
+        if (exists(&quot;temp_data&quot;)) {
+            temp_data &lt;- bind_rows(temp_data, tmp_temp_df)
+        }else{
+            temp_data &lt;- tmp_temp_df
+        }
+      }
+
+    return(temp_data)
+}
+
+
+data &lt;- process_nc(file_list)
+
+as_tibble(data)</code></pre>
+<pre><code>## # A tibble: 2,880 x 3
+##      lon   lat  temp
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 -79.4  34.9  302.
+##  2 -79.3  34.9  302.
+##  3 -79.2  34.9  302.
+##  4 -79.1  34.9  302.
+##  5 -78.9  34.9  301.
+##  6 -78.8  34.9  301.
+##  7 -79.4  35.1  301.
+##  8 -79.3  35.1  302.
+##  9 -79.2  35.1  302.
+## 10 -79.1  35.1  301.
+## # ... with 2,870 more rows</code></pre>
+</div>
 
 
 
