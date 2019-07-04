@@ -241,8 +241,8 @@ bases_geom[[1]] %>% class
 
     ## [1] "XY"           "MULTIPOLYGON" "sfg"
 
-Inspection plots
-----------------
+Inspection plot - world
+-----------------------
 
 ``` r
 world <- ne_countries(scale = "medium", returnclass = "sf")
@@ -254,7 +254,7 @@ ggplot() +
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](bases_files/figure-markdown_github/world_plot-1.png)
 
 Select specific installations
 -----------------------------
@@ -270,20 +270,55 @@ ggplot(army_select) +
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](bases_files/figure-markdown_github/select_bases-1.png)
 
 ``` r
 bragg <-
 bases %>% 
   filter(.$site_name == "Fort Bragg")
 
+# Save shapefile
+# st_write(bragg, "bragg.shp")
+
+st_centroid(bragg) %>% 
+  as.tibble()
+```
+
+    ## Warning in st_centroid.sf(bragg): st_centroid assumes attributes are
+    ## constant over geometries of x
+
+    ## Warning in st_centroid.sfc(st_geometry(x), of_largest_polygon =
+    ## of_largest_polygon): st_centroid does not give correct centroids for
+    ## longitude/latitude data
+
+    ## Warning: `as.tibble()` is deprecated, use `as_tibble()` (but mind the new semantics).
+    ## This warning is displayed once per session.
+
+    ## # A tibble: 1 x 7
+    ##   component site_name joint_base state_terr country oper_stat
+    ##   <fct>     <fct>     <fct>      <fct>      <fct>   <fct>    
+    ## 1 Army Act~ Fort Bra~ N/A        North Car~ United~ Active   
+    ## # ... with 1 more variable: geometry <POINT [°]>
+
+``` r
+bragg_centroid <- st_centroid(bragg)
+```
+
+    ## Warning in st_centroid.sf(bragg): st_centroid assumes attributes are
+    ## constant over geometries of x
+
+    ## Warning in st_centroid.sfc(st_geometry(x), of_largest_polygon =
+    ## of_largest_polygon): st_centroid does not give correct centroids for
+    ## longitude/latitude data
+
+``` r
 ggplot(bragg) +
   ggtitle("Fort Bragg") +
   geom_sf() +
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/unnamed-chunk-4-2.png)
+![](bases_files/figure-markdown_github/select_bases-2.png)
 
 ``` r
 ggplot(bases %>% 
@@ -293,10 +328,12 @@ ggplot(bases %>%
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/unnamed-chunk-4-3.png)
+![](bases_files/figure-markdown_github/select_bases-3.png)
 
 Load NLDAS grids
 ----------------
+
+NLDAS grid shapefile from: <https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_Grid_Reference.zip>
 
 ``` r
 nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
@@ -373,16 +410,29 @@ bragg_nldas <-
     ## throughout all geometries
 
 ``` r
-sum(bragg_nldas$area)
+bragg_intersects <-
+  nldas_grid %>% filter(lengths(st_intersects(., bragg)) > 0)
 ```
 
-    ## 626833051 [m^2]
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
 
 ``` r
-sum(bragg_nldas$weight)
+as.data.frame(bragg_intersects) %>% 
+  select(-geometry)
 ```
 
-    ## 1 [1]
+    ##     centerx centery nldas_x nldas_y nldas_id
+    ## 1  -79.4375 35.0625     365      81  x365y81
+    ## 2  -79.3125 35.0625     366      81  x366y81
+    ## 3  -79.1875 35.0625     367      81  x367y81
+    ## 4  -79.0625 35.0625     368      81  x368y81
+    ## 5  -78.9375 35.0625     369      81  x369y81
+    ## 6  -79.3125 35.1875     366      82  x366y82
+    ## 7  -79.1875 35.1875     367      82  x367y82
+    ## 8  -79.0625 35.1875     368      82  x368y82
+    ## 9  -78.9375 35.1875     369      82  x369y82
+    ## 10 -79.0625 35.3125     368      83  x368y83
+    ## 11 -78.9375 35.3125     369      83  x369y83
 
 ``` r
 bragg_nldas
@@ -430,15 +480,16 @@ bragg_nldas
     ## 10 MULTIPOLYGON (((-79.07842 3...   5968542.1 [m^2] 0.0095217413 [1]
 
 ``` r
-ggplot(bragg_nldas) + 
-  ggtitle("Fort Bragg NLDAS grids") +
-  geom_sf() +
-  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
-  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
-  theme_bw()
+sum(bragg_nldas$area)
 ```
 
-![](bases_files/figure-markdown_github/unnamed-chunk-6-1.png)
+    ## 626833051 [m^2]
+
+``` r
+sum(bragg_nldas$weight)
+```
+
+    ## 1 [1]
 
 ``` r
 st_area(bragg_nldas) 
@@ -448,3 +499,61 @@ st_area(bragg_nldas)
     ##  [1]    267870.6  85682501.6 103830342.2  71718332.8   8288123.1
     ##  [6]  58628497.8  85822173.7 141136566.4  61218699.6   5968542.1
     ## [11]   4271401.2
+
+``` r
+ggplot(bragg_nldas) + 
+  ggtitle("Fort Bragg NLDAS grids") +
+  geom_sf() +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
+  theme_bw()
+```
+
+![](bases_files/figure-markdown_github/nldas_intersection-1.png)
+
+Bounding box for installation
+-----------------------------
+
+``` r
+st_bbox(bragg) %>% 
+  .[c("ymin", "xmin", "ymax", "xmax")]
+```
+
+    ##      ymin      xmin      ymax      xmax 
+    ##  35.03946 -79.38063  35.27456 -78.90188
+
+``` r
+bb_bragg <- st_as_sfc(st_bbox(bragg))
+class(bb_bragg)
+```
+
+    ## [1] "sfc_POLYGON" "sfc"
+
+Plots of intersecting NLDAS grids
+
+``` r
+ggplot() +
+  geom_sf(data = bragg_nldas) +
+  geom_sf(data = bb_bragg , color = "blue", fill = "NA") +
+  geom_sf(data = bragg_centroid, color = "red") +
+  ggtitle("Fort Bragg Bounding Box") +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
+  theme_bw()
+```
+
+![](bases_files/figure-markdown_github/grid_plots-1.png)
+
+``` r
+ggplot() +
+  geom_sf(data = bragg_intersects) +
+  geom_sf(data = bb_bragg , color = "blue", fill = "NA") +
+  geom_sf(data = bragg_centroid, color = "red") +
+  geom_sf(data = bragg, fill = "NA") +
+  ggtitle("Fort Bragg Intersecting Grids") +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.03)) +
+  theme_bw()
+```
+
+![](bases_files/figure-markdown_github/grid_plots-2.png)

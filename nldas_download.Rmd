@@ -2,18 +2,20 @@
 title: "nldas_download"
 author: "SL"
 date: "July 2, 2019"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 
 library(tidyverse)
 # library(installr)
 # installr::system.PATH()
 
 library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
 ```
 
 
@@ -57,7 +59,7 @@ SSW Steps:
 # https://www.r-bloggers.com/a-netcdf-4-in-r-cheatsheet/
 # Retrieve a list of nc files in data folder:
 file_list <- list.files(path = "nldas_data/bragg_test/", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
-file_list
+file_list %>% head()
 
 
 
@@ -95,6 +97,30 @@ nc1_lat <- ncvar_get(nc1, attributes(nc1$dim)$names[1])
 nc1_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
 
 print(paste(dim(nc1_lat), "latitudes and", dim(nc1_lon), "longitudes"))
+
+```
+
+## Metadata
+
+
+```{r}
+ncdump::NetCDF(paste0("nldas_data/bragg_test/", file_list[1]))
+
+```
+
+
+```{r print_list}
+
+print_list <- function(list) {
+
+  for (item in 1:length(list)) {
+
+    print(head(list[[item]]))
+
+  }
+}
+
+print_list(nc1)
 ```
 
 
@@ -131,7 +157,7 @@ nc_close(nc1)
 
 ## Processing multiple netCDF files
 
-```{r}
+```{r eval=FALSE}
 # Define our function
 process_nc <- function(files) {
     # iterate through the nc
@@ -159,9 +185,69 @@ process_nc <- function(files) {
     return(temp_data)
 }
 
+nc1
 
-data <- process_nc(file_list)
+nc1$var$TMP2m_110_HTGL$initial_time
+nc1$var$TMP2m_110_HTGL$longname
+ncvar_get(nc1, attributes(nc1$var)$names[10])
 
-as_tibble(data)
+str(nc1)
+
+
+tidy_ncdf <- function(files) {
+    # iterate through the nc
+    for (i in 1:length(files)) {
+        # open a conneciton to the ith nc file
+        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        # store values from variables and atributes
+        nc_temp <- ncvar_get(nc_store, attributes(nc_store$var)$names[10])
+        nc_humid <- ncvar_get(nc_store, attributes(nc_store$var)$names[7])
+        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
+        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+         # close the connection sice were finished
+        nc_close(nc_store)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_temp) <- list(lon = nc_lon, lat = nc_lat)
+        dimnames(nc_humid) <- list(lon = nc_lon, lat = nc_lat)
+        store_temp_df <- nc_temp %>% reshape2::melt(., value.name = "temperature") %>% 
+          gather(., key = variable, value = value, temperature)
+        store_humid_df <- nc_humid %>% reshape2::melt(., value.name = "sp_humidity") %>% 
+          gather(., key = variable, value = value, sp_humidity)
+        # set the name of new variable and bind the new data to it
+        if (exists("var_data")) {
+            var_data <- bind_rows(var_data, store_temp_df)
+            var_data <- bind_rows(var_data, store_humid_df)
+        }else{
+            var_data <- store_temp_df
+            var_data <- bind_rows(var_data, store_humid_df)
+            
+        }
+      }
+
+    return(var_data)
+}
+
+data <- tidy_ncdf(file_list)
+
+as.data.frame(data)
+
+
+nc_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
+nc_lat <- ncvar_get(nc1, attributes(nc1$dim)$names[1])
+temp <- ncvar_get(nc1, attributes(nc1$var)$names[10]) 
+dimnames(temp) <- list(lon = nc_lon, lat = nc_lat)
+temp <- temp %>% reshape2::melt(., value.name = "temperature") %>% 
+  gather(., key = variable, value = value, temperature)
+temp
+
+humid <- ncvar_get(nc1, attributes(nc1$var)$names[7])
+dimnames(humid) <- list(lon = nc_lon, lat = nc_lat)
+humid <- humid %>% reshape2::melt(., value.name = "humidity") %>% 
+  gather(., key = variable, value = value, humidity)
+humid
+bind_rows(temp, humid)
+
+
 ```
+
 
