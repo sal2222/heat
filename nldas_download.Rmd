@@ -70,7 +70,7 @@ file_list %>% head()
 
 # Open a connection to the first file in  list
 nc1 <- ncdf4::nc_open(paste0("nldas_data/bragg_test/", file_list[1]))
-print(nc1)
+# print(nc1)
 
 
 # Get a list of the NetCDF's R attributes:
@@ -230,8 +230,7 @@ data %>%
    summarise_each(funs(mean(., na.rm = TRUE)))
 
 
-names(nc1$var)
-ncatt_get(nc1, attributes(nc1$var)$names[5])
+
 
 
 

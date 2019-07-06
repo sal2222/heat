@@ -399,7 +399,25 @@ var_list <- list(
   var_row = 1:nrow(variables),          
   var_name = variables$short_names
 )
+
+
+# Review initial time in nc1 for each variable
+for (i in 1:11) {
+   print(ncatt_get(nc1, attributes(nc1$var)$names[i])$initial_time)
+}
 ```
+
+    ## [1] "06/23/2019 (23:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/23/2019 (23:00)"
+    ## [1] "06/23/2019 (23:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
+    ## [1] "06/24/2019 (00:00)"
 
 Metadata
 --------
@@ -590,79 +608,6 @@ Processing multiple netCDF files
 --------------------------------
 
 ``` r
-# Define our function
-process_nc <- function(files) {
-    # iterate through the nc
-    for (i in 1:length(files)) {
-        # open a conneciton to the ith nc file
-        nc_tmp <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
-        # store values from variables and atributes
-        nc_temp <- ncvar_get(nc_tmp, attributes(nc_tmp$var)$names[10])
-        nc_lat <- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[1])
-        nc_lon <- ncvar_get(nc_tmp, attributes(nc_tmp$dim)$names[2])
-        nc_atts <- ncatt_get(nc_tmp, 0)
-        # close the connection sice were finished
-        nc_close(nc_tmp)
-        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
-        dimnames(nc_temp) <- list(lon = nc_lon, lat = nc_lat)
-        tmp_temp_df <- reshape2::melt(nc_temp, value.name = "temp")
-        # set the name of my new variable and bind the new data to it
-        if (exists("temp_data")) {
-            temp_data <- bind_rows(temp_data, tmp_temp_df)
-        }else{
-            temp_data <- tmp_temp_df
-        }
-      }
-
-    return(temp_data)
-}
-
-nc1
-
-nc1$var$TMP2m_110_HTGL$initial_time
-nc1$var$TMP2m_110_HTGL$longname
-ncvar_get(nc1, attributes(nc1$var)$names[10])
-
-str(nc1)
-
-
-tidy_ncdf <- function(files) {
-    # iterate through the nc
-    for (i in 1:seq_along(files)) {
-        # open a conneciton to the ith nc file
-        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
-        # store values from variables and atributes
-        nc_temp <- ncvar_get(nc_store, attributes(nc_store$var)$names[10])
-        nc_humid <- ncvar_get(nc_store, attributes(nc_store$var)$names[7])
-        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
-        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
-        nc_time <- ncatt_get(nc1, attributes(nc1$var)$names[10])$initial_time
-         # close the connection sice were finished
-        nc_close(nc_store)
-        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
-        dimnames(nc_temp) <- list(lon = nc_lon, lat = nc_lat)
-        dimnames(nc_humid) <- list(lon = nc_lon, lat = nc_lat)
-        store_temp_df <- nc_temp %>% reshape2::melt(., value.name = "temperature") %>% 
-          gather(., key = variable, value = value, temperature)
-        store_humid_df <- nc_humid %>% reshape2::melt(., value.name = "sp_humidity") %>% 
-          gather(., key = variable, value = value, sp_humidity)
-        # set the name of new variable and bind the new data to it
-        if (exists("var_data")) {
-            var_data <- bind_rows(var_data, store_temp_df)
-            var_data <- bind_rows(var_data, store_humid_df)
-        }else{
-            var_data <- store_temp_df
-            var_data <- bind_rows(var_data, store_humid_df)
-            
-        }
-      }
-    }
-
-    return(var_data)
-}
-
-paste("nc", var_list$var_name[1], sep = "_")
-ncvar_get(nc1, attributes(nc1$var)$names[var_list$var_row[1]])
 ## Nested loop
 
 tidy_ncdf <- function(files) {
@@ -673,22 +618,25 @@ tidy_ncdf <- function(files) {
         # store values from variables and atributes
         nc_names <- paste("nc", var_list$var_name[j], sep = "_")
         nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
-        #[[nc_names]]_time <- ncatt_get(nc1, attributes(nc1$var)$names[var_list$var_row[j]])$initial_time
+        nc_time <- ncatt_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])$initial_time
         nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
         nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
         # close the connection 
         nc_close(nc_store)
         # set the dimension names and values of your matrix to the appropriate latitude and longitude values
         dimnames(nc_names) <- list(lon = nc_lon, lat = nc_lat)
-        
+
         store_nc_names <- nc_names %>% reshape2::melt(., value.name = var_list$var_name[j]) %>% 
-          gather(., key = variable, value = value, var_list$var_name[j])
+          gather(., key = variable, value = value, var_list$var_name[j]) %>% 
+          mutate(time = nc_time)
+
         # set the name of new variable and bind the new data to it
         if (exists("var_data")) {
             var_data <- bind_rows(var_data, store_nc_names)
-          
+ 
         }else{
             var_data <- store_nc_names
+
           }
       }
      }
@@ -697,43 +645,130 @@ tidy_ncdf <- function(files) {
 
 
 data <- tidy_ncdf(file_list)
-
 as_tibble(data)
+```
 
+    ## # A tibble: 31,680 x 5
+    ##      lon   lat variable value time              
+    ##    <dbl> <dbl> <chr>    <dbl> <chr>             
+    ##  1 -79.4  34.9 evap     0.355 06/23/2019 (23:00)
+    ##  2 -79.3  34.9 evap     0.349 06/23/2019 (23:00)
+    ##  3 -79.2  34.9 evap     0.334 06/23/2019 (23:00)
+    ##  4 -79.1  34.9 evap     0.311 06/23/2019 (23:00)
+    ##  5 -78.9  34.9 evap     0.285 06/23/2019 (23:00)
+    ##  6 -78.8  34.9 evap     0.271 06/23/2019 (23:00)
+    ##  7 -79.4  35.1 evap     0.371 06/23/2019 (23:00)
+    ##  8 -79.3  35.1 evap     0.363 06/23/2019 (23:00)
+    ##  9 -79.2  35.1 evap     0.347 06/23/2019 (23:00)
+    ## 10 -79.1  35.1 evap     0.324 06/23/2019 (23:00)
+    ## # ... with 31,670 more rows
+
+``` r
 data %>% 
   tibble::rowid_to_column() %>%
    spread(variable, value) %>% 
   group_by(lat, lon) %>% 
    summarise_each(funs(mean(., na.rm = TRUE)))
-
-
-nc_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
-nc_lat <- ncvar_get(nc1, attributes(nc1$dim)$names[1])
-temp <- ncvar_get(nc1, attributes(nc1$var)$names[10]) 
-dimnames(temp) <- list(lon = nc_lon, lat = nc_lat)
-temp <- temp %>% reshape2::melt(., value.name = "temperature") %>% 
-  gather(., key = variable, value = value, temperature)
-temp
-
-humid <- ncvar_get(nc1, attributes(nc1$var)$names[7])
-dimnames(humid) <- list(lon = nc_lon, lat = nc_lat)
-humid <- humid %>% reshape2::melt(., value.name = "humidity") %>% 
-  gather(., key = variable, value = value, humidity)
-humid
-bind_rows(temp, humid)
-
-
-
-ncatt_get(nc1, attributes(nc1$var)$names[5])$initial_time
-
-
-# Review initial time in nc1 for each variable
-for (i in 1:11) {
-   print(ncatt_get(nc1, attributes(nc1$var)$names[i])$initial_time)
-}
-
-
-
-ncatt_get(nc1, attributes(nc1$var)$names[10])
-ncatt_get(nc1, attributes(nc1$var)$names[10])$long_name
 ```
+
+    ## Warning: funs() is soft deprecated as of dplyr 0.8.0
+    ## Please use a list of either functions or lambdas: 
+    ## 
+    ##   # Simple named list: 
+    ##   list(mean = mean, median = median)
+    ## 
+    ##   # Auto named with `tibble::lst()`: 
+    ##   tibble::lst(mean, median)
+    ## 
+    ##   # Using lambdas
+    ##   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+    ## This warning is displayed once per session.
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## Warning in mean.default(time, na.rm = TRUE): argument is not numeric or
+    ## logical: returning NA
+
+    ## # A tibble: 24 x 15
+    ## # Groups:   lat [4]
+    ##      lat   lon rowid  time  cape con_frac  evap longwave merid_wind  precip
+    ##    <dbl> <dbl> <dbl> <dbl> <dbl>    <dbl> <dbl>    <dbl>      <dbl>   <dbl>
+    ##  1  34.9 -79.4 15829    NA  819.   0.025  0.379     400.    -0.195  3.67e-4
+    ##  2  34.9 -79.3 15830    NA  825.   0      0.380     401.    -0.243  0.     
+    ##  3  34.9 -79.2 15831    NA  841.   0      0.379     402.    -0.161  0.     
+    ##  4  34.9 -79.1 15832    NA  861.   0      0.378     403.    -0.0528 0.     
+    ##  5  34.9 -78.9 15833    NA  883.   0      0.376     404.     0.0616 0.     
+    ##  6  34.9 -78.8 15834    NA  892.   0      0.374     405.     0.180  0.     
+    ##  7  35.1 -79.4 15835    NA  790.   0.0314 0.377     398.    -0.181  1.27e-4
+    ##  8  35.1 -79.3 15836    NA  803.   0      0.378     399.    -0.252  0.     
+    ##  9  35.1 -79.2 15837    NA  826.   0      0.377     400.    -0.244  0.     
+    ## 10  35.1 -79.1 15838    NA  852.   0      0.375     402.    -0.120  0.     
+    ## # ... with 14 more rows, and 5 more variables: pressure <dbl>,
+    ## #   shortwave <dbl>, sp_humid <dbl>, temperature <dbl>, zonal_wind <dbl>
