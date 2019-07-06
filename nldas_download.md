@@ -346,6 +346,61 @@ print(paste(dim(nc1_lat), "latitudes and", dim(nc1_lon), "longitudes"))
 
     ## [1] "4 latitudes and 6 longitudes"
 
+Variable names
+--------------
+
+``` r
+var_names <- attributes(nc1$var)$names
+
+long_names <- vector("character", length = 11)
+  
+for (i in 1:11) {
+   long_names[[i]] <- ncatt_get(nc1, attributes(nc1$var)$names[[i]])$long_name
+}
+long_names
+```
+
+    ##  [1] "Potential evaporation"                                      
+    ##  [2] "LW radiation flux downwards (surface)"                      
+    ##  [3] "SW radiation flux downwards (surface)"                      
+    ##  [4] "180-0 mb above ground Convective Available Potential Energy"
+    ##  [5] "Fraction of total precipitation that is convective"         
+    ##  [6] "Precipitation hourly total"                                 
+    ##  [7] "2-m above ground Specific humidity"                         
+    ##  [8] "10-m above ground Meridional wind speed"                    
+    ##  [9] "10-m above ground Zonal wind speed"                         
+    ## [10] "2-m above ground Temperature"                               
+    ## [11] "Surface pressure"
+
+``` r
+short_names <- c("evap", "longwave", "shortwave", "cape", "con_frac", "precip", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")
+
+variables <- as_tibble(cbind(var_names, long_names, short_names))
+variables
+```
+
+    ## # A tibble: 11 x 3
+    ##    var_names           long_names                               short_names
+    ##    <chr>               <chr>                                    <chr>      
+    ##  1 PEVAPsfc_110_SFC_a~ Potential evaporation                    evap       
+    ##  2 DLWRFsfc_110_SFC    LW radiation flux downwards (surface)    longwave   
+    ##  3 DSWRFsfc_110_SFC    SW radiation flux downwards (surface)    shortwave  
+    ##  4 CAPE180_0mb_110_SP~ 180-0 mb above ground Convective Availa~ cape       
+    ##  5 CONVfracsfc_110_SF~ Fraction of total precipitation that is~ con_frac   
+    ##  6 APCPsfc_110_SFC_ac~ Precipitation hourly total               precip     
+    ##  7 SPFH2m_110_HTGL     2-m above ground Specific humidity       sp_humid   
+    ##  8 VGRD10m_110_HTGL    10-m above ground Meridional wind speed  merid_wind 
+    ##  9 UGRD10m_110_HTGL    10-m above ground Zonal wind speed       zonal_wind 
+    ## 10 TMP2m_110_HTGL      2-m above ground Temperature             temperature
+    ## 11 PRESsfc_110_SFC     Surface pressure                         pressure
+
+``` r
+var_list <- list(
+  var_row = 1:nrow(variables),          
+  var_name = variables$short_names
+)
+```
+
 Metadata
 --------
 
@@ -443,1267 +498,15 @@ ncdump::NetCDF(paste0("nldas_data/bragg_test/", file_list[1]))
 
 ``` r
 print_list <- function(list) {
-
   for (item in 1:length(list)) {
-
     print(head(list[[item]]))
-
   }
 }
-
 print_list(nc1)
 ```
 
-    ## [1] "nldas_data/bragg_test/NLDAS_FORA0125_H.A20190624.0000.002.2019184154210.pss.nc"
-    ## [1] FALSE
-    ## [1] 65536
-    ## [1] FALSE
-    ## [1] "NC_FORMAT_CLASSIC"
-    ## [1] FALSE
-    ## [[1]]
-    ## $id
-    ## [1] 65536
-    ## 
-    ## $name
-    ## [1] ""
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $nvars
-    ## [1] 13
-    ## 
-    ## $natts
-    ## [1] 6
-    ## 
-    ## $dimid
-    ## [1] 0 1
-    ## 
-    ## $fqgn
-    ## [1] ""
-    ## 
-    ## attr(,"class")
-    ## [1] "ncgroup4"
-    ## 
-    ## [[1]]
-    ## [1] 1
-    ## 
-    ## [1] 2
-    ## [1] 6
-    ## $lat_110
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $lon_110
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## [1] -1
-    ## [1] 11
-    ## $PEVAPsfc_110_SFC_acc1h
-    ## $id
-    ## $id
-    ## [1] 2
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 1
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "PEVAPsfc_110_SFC_acc1h"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 13
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "kg/m^2"
-    ## 
-    ## $longname
-    ## [1] "Potential evaporation"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-    ## 
-    ## $DLWRFsfc_110_SFC
-    ## $id
-    ## $id
-    ## [1] 3
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 2
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "DLWRFsfc_110_SFC"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 13
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "W/m^2"
-    ## 
-    ## $longname
-    ## [1] "LW radiation flux downwards (surface)"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-    ## 
-    ## $DSWRFsfc_110_SFC
-    ## $id
-    ## $id
-    ## [1] 4
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 3
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "DSWRFsfc_110_SFC"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 13
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "W/m^2"
-    ## 
-    ## $longname
-    ## [1] "SW radiation flux downwards (surface)"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-    ## 
-    ## $CAPE180_0mb_110_SPDY
-    ## $id
-    ## $id
-    ## [1] 5
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 4
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "CAPE180_0mb_110_SPDY"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 14
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "J/kg"
-    ## 
-    ## $longname
-    ## [1] "180-0 mb above ground Convective Available Potential Energy"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-    ## 
-    ## $CONVfracsfc_110_SFC_acc1h
-    ## $id
-    ## $id
-    ## [1] 6
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 5
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "CONVfracsfc_110_SFC_acc1h"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 13
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "unitless"
-    ## 
-    ## $longname
-    ## [1] "Fraction of total precipitation that is convective"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-    ## 
-    ## $APCPsfc_110_SFC_acc1h
-    ## $id
-    ## $id
-    ## [1] 7
-    ## 
-    ## $group_index
-    ## [1] -1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] 6
-    ## 
-    ## $isdimvar
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $name
-    ## [1] "APCPsfc_110_SFC_acc1h"
-    ## 
-    ## $ndims
-    ## [1] 2
-    ## 
-    ## $natts
-    ## [1] 13
-    ## 
-    ## $size
-    ## [1] 6 4
-    ## 
-    ## $dimids
-    ## [1] 1 0
-    ## 
-    ## $prec
-    ## [1] "float"
-    ## 
-    ## $units
-    ## [1] "kg/m^2"
-    ## 
-    ## $longname
-    ## [1] "Precipitation hourly total"
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $chunksizes
-    ## [1] NA
-    ## 
-    ## $storage
-    ## [1] 1
-    ## 
-    ## $shuffle
-    ## [1] FALSE
-    ## 
-    ## $compression
-    ## [1] NA
-    ## 
-    ## $dims
-    ## list()
-    ## 
-    ## $dim
-    ## $dim[[1]]
-    ## $name
-    ## [1] "lon_110"
-    ## 
-    ## $len
-    ## [1] 6
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 1
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 0
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_east"
-    ## 
-    ## $vals
-    ## [1] -79.438 -79.313 -79.188 -79.063 -78.938 -78.813
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## $dim[[2]]
-    ## $name
-    ## [1] "lat_110"
-    ## 
-    ## $len
-    ## [1] 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $id
-    ## [1] 0
-    ## 
-    ## $dimvarid
-    ## $id
-    ## [1] 1
-    ## 
-    ## $group_index
-    ## [1] 1
-    ## 
-    ## $group_id
-    ## [1] 65536
-    ## 
-    ## $list_index
-    ## [1] -1
-    ## 
-    ## $isdimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncid4"
-    ## 
-    ## $units
-    ## [1] "degrees_north"
-    ## 
-    ## $vals
-    ## [1] 34.938 35.063 35.188 35.313
-    ## 
-    ## $create_dimvar
-    ## [1] TRUE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncdim4"
-    ## 
-    ## 
-    ## $varsize
-    ## [1] 6 4
-    ## 
-    ## $unlim
-    ## [1] FALSE
-    ## 
-    ## $make_missing_value
-    ## [1] TRUE
-    ## 
-    ## $missval
-    ## [1] 1e+20
-    ## 
-    ## $hasAddOffset
-    ## [1] FALSE
-    ## 
-    ## $hasScaleFact
-    ## [1] FALSE
-    ## 
-    ## attr(,"class")
-    ## [1] "ncvar4"
-
-Variable matrix by lat/long
----------------------------
+Example variable matrix by lat/long
+-----------------------------------
 
 ``` r
 # Change the dimension names of our matrix to "lon" and "lat" 
@@ -1711,7 +514,6 @@ Variable matrix by lat/long
 
 dimnames(temp) <- 
   list(lon = nc1_lon, lat = nc1_lat) 
-
 temp
 ```
 
@@ -1826,7 +628,7 @@ str(nc1)
 
 tidy_ncdf <- function(files) {
     # iterate through the nc
-    for (i in 1:length(files)) {
+    for (i in 1:seq_along(files)) {
         # open a conneciton to the ith nc file
         nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
         # store values from variables and atributes
@@ -1834,6 +636,7 @@ tidy_ncdf <- function(files) {
         nc_humid <- ncvar_get(nc_store, attributes(nc_store$var)$names[7])
         nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
         nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+        nc_time <- ncatt_get(nc1, attributes(nc1$var)$names[10])$initial_time
          # close the connection sice were finished
         nc_close(nc_store)
         # set the dimension names and values of your matrix to the appropriate latitude and longitude values
@@ -1853,13 +656,55 @@ tidy_ncdf <- function(files) {
             
         }
       }
+    }
 
     return(var_data)
 }
 
+paste("nc", var_list$var_name[1], sep = "_")
+ncvar_get(nc1, attributes(nc1$var)$names[var_list$var_row[1]])
+## Nested loop
+
+tidy_ncdf <- function(files) {
+     for (i in seq_along(files)) {
+      for (j in seq_along(var_list$var_row)) {   
+        # open a conneciton to the ith nc file
+        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        # store values from variables and atributes
+        nc_names <- paste("nc", var_list$var_name[j], sep = "_")
+        nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
+        #[[nc_names]]_time <- ncatt_get(nc1, attributes(nc1$var)$names[var_list$var_row[j]])$initial_time
+        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
+        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+        # close the connection 
+        nc_close(nc_store)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_names) <- list(lon = nc_lon, lat = nc_lat)
+        
+        store_nc_names <- nc_names %>% reshape2::melt(., value.name = var_list$var_name[j]) %>% 
+          gather(., key = variable, value = value, var_list$var_name[j])
+        # set the name of new variable and bind the new data to it
+        if (exists("var_data")) {
+            var_data <- bind_rows(var_data, store_nc_names)
+          
+        }else{
+            var_data <- store_nc_names
+          }
+      }
+     }
+    return(var_data)
+}
+
+
 data <- tidy_ncdf(file_list)
 
-as.data.frame(data)
+as_tibble(data)
+
+data %>% 
+  tibble::rowid_to_column() %>%
+   spread(variable, value) %>% 
+  group_by(lat, lon) %>% 
+   summarise_each(funs(mean(., na.rm = TRUE)))
 
 
 nc_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
@@ -1876,4 +721,19 @@ humid <- humid %>% reshape2::melt(., value.name = "humidity") %>%
   gather(., key = variable, value = value, humidity)
 humid
 bind_rows(temp, humid)
+
+
+
+ncatt_get(nc1, attributes(nc1$var)$names[5])$initial_time
+
+
+# Review initial time in nc1 for each variable
+for (i in 1:11) {
+   print(ncatt_get(nc1, attributes(nc1$var)$names[i])$initial_time)
+}
+
+
+
+ncatt_get(nc1, attributes(nc1$var)$names[10])
+ncatt_get(nc1, attributes(nc1$var)$names[10])$long_name
 ```
