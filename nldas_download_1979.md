@@ -3,10 +3,6 @@ nldas\_download
 SL
 July 2, 2019
 
-``` r
-# system("C:\Program Files (x86)wget-1.20.3-win64\wget )
-```
-
 Earthdata.nasa.gov Collection: NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS\_FORA0125\_H) at GES DISC Homepage: <https://ldas.gsfc.nasa.gov/nldas/> Metadata: <https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt>
 
 Distribution URLs:
@@ -22,12 +18,12 @@ SSW Steps:
 5.  Select variables from dropdown (all 11); choice of "GRIB" or "netCDF" -&gt; netCDF
 6.  Click "subset selected data sets"
 7.  Click "View selected data sets"
-8.  Download Manager: <https://chrome.google.com/webstore/detail/chrono-download-manager>
 
--   Chrono Sniffer -&gt; Application -&gt; select links (120 in 5-day week test)
--   select all
--   click "download all"
--   about 6 minutes for 120 files
+Download Manager: <https://chrome.google.com/webstore/detail/chrono-download-manager> - Chrono Sniffer -&gt; Application -&gt; select links (120 in 5-day week test) - select all - click "download all" - about 6 minutes for 120 files
+
+wget: - save URL's in txt file
+
+wget --load-cookies C:.urs\_cookies --save-cookies C:.urs\_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password -- content-disposition -i C:\_1979\_urls.txt -P C:\_1979
 
 ``` r
 # https://www.r-bloggers.com/a-netcdf-4-in-r-cheatsheet/
@@ -592,4 +588,4 @@ data %>%
   theme_bw()
 ```
 
-![](nldas_download_files/figure-markdown_github/plot-1.png)
+![](nldas_download_1979_files/figure-markdown_github/plot-1.png)
