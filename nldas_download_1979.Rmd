@@ -63,6 +63,11 @@ Command
   
 `wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --
 content-disposition -i C:\Users\slewa\Documents\data\heat\bragg_1979_urls.txt -P C:\Users\slewa\Documents\data\heat\bragg_1979`
+
+Start: 08 JUL 13:06
+(FINISHED --2019-07-09 09:59:55--
+Total wall clock time: 20h 54m 0s
+Downloaded: 7604 files, 63M in 1m 11s (906 KB/s))
   
 
 ## Create list of files in R  
@@ -70,7 +75,7 @@ content-disposition -i C:\Users\slewa\Documents\data\heat\bragg_1979_urls.txt -P
 
 # https://www.r-bloggers.com/a-netcdf-4-in-r-cheatsheet/
 # Retrieve a list of nc files in data folder:
-file_list <- list.files(path = "nldas_data/bragg_test/", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
+file_list <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_1979", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
 file_list %>% head()
 
 ```
@@ -79,7 +84,7 @@ file_list %>% head()
 ```{r inspect_first, eval=FALSE}
 
 # Open a connection to the first file in  list
-nc1 <- ncdf4::nc_open(paste0("nldas_data/bragg_test/", file_list[1]))
+nc1 <- ncdf4::nc_open(paste0("C:/Users/slewa/Documents/data/heat/bragg_1979/", file_list[1]))
 # print(nc1)
 
 # Get a list of the NetCDF's R attributes:
@@ -206,7 +211,7 @@ tidy_ncdf <- function(files) {
      for (i in seq_along(files)) {
       for (j in seq_along(var_list$var_row)) {   
         # open a conneciton to the ith nc file
-        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        nc_store <- nc_open(paste0("C:/Users/slewa/Documents/data/heat/bragg_1979/", files[i]))
         # store values from variables and atributes
         nc_names <- paste("nc", var_list$var_name[j], sep = "_")
         nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
@@ -240,8 +245,8 @@ tidy_ncdf <- function(files) {
 ## Run data processing function
 ```{r run_function}
 
-nldas_data <- tidy_ncdf(file_list)
-as_tibble(nldas_data)
+nldas_data_1979 <- tidy_ncdf(file_list)
+as_tibble(nldas_data_1979)
 
 # Summary table (variable means)
 nldas_data %>% 
@@ -257,7 +262,7 @@ Fuzzy join used due to rounding differences at the fourth decimal place between 
 # "base_nldas" file from bases.Rmd
 
 fuzzy <-
-nldas_data %>%
+nldas_data_1979 %>%
   fuzzyjoin::difference_left_join(bragg_nldas, by = c("lon" = "centerx", "lat" = "centery"), max_dist = 0.001, distance_col = "distance") %>% 
   dplyr::select(lon, lat, variable, value, initial_time, nldas_id, weight, lat.distance, lon.distance) %>%
   filter(!is.na(nldas_id)) %>% 
@@ -274,10 +279,10 @@ summary(fuzzy$lon.distance)
 
 ## Plot data
 ```{r plot}
-nldas_data %>%
-  mutate(initial_time = flipTime::AsDateTime(initial_time)) %>% 
-  group_by(lat, lon) %>% 
-  ggplot(aes(x = initial_time, y = value, color = variable)) +
+
+# Plot by Grid id
+fuzzy %>%
+  ggplot(aes(x = initial_time, y = value, color = nldas_id)) +
   geom_line() +
   facet_wrap(. ~ variable, scales = "free_y") +
   theme_bw()
@@ -285,9 +290,10 @@ nldas_data %>%
 
 # Plot by Grid id
 fuzzy %>%
+  filter(variable == "temperature") %>% 
   ggplot(aes(x = initial_time, y = value, color = nldas_id)) +
   geom_line() +
-  facet_wrap(. ~ variable, scales = "free_y") +
+  viridis::scale_fill_viridis() +
   theme_bw()
 
 ```

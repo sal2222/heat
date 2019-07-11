@@ -1,0 +1,227 @@
+---
+title: "small_workflow"
+author: "SL"
+date: "July 11, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(tidyverse)
+library(viridis)
+library(rvest)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+library(lwgeom)
+library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
+library(lubridate)
+library(flipTime)
+library(fuzzyjoin)
+library(RNetCDF)
+library(tidync)
+library(furrr)
+```
+
+```{r}
+
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+army_select <-
+bases %>% 
+  filter(.$site_name %in% c("Fort Bragg", "Fort Benning GA", "Fort Benning", "Fort Campbell" ))
+
+bragg <-
+bases %>% 
+  filter(.$site_name == "Fort Bragg")
+
+st_bbox(bragg) %>% 
+  .[c("ymin", "xmin", "ymax", "xmax")]
+bragg_centroid <- st_centroid(bragg)
+
+```
+
+```{r}
+nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
+  janitor::clean_names()
+
+bragg_nldas <-
+  st_intersection(bragg, nldas_grid) %>% 
+  mutate(area = sf::st_area(.),
+         weight = area / sum(area))
+
+```
+
+```{r}
+file_list <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_test", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
+file_list %>% head()
+
+# Open a connection to the first file in  list
+nc1 <- ncdf4::nc_open(paste0("C:/Users/slewa/Documents/data/heat/bragg_test/", file_list[1]))
+
+var_names <- attributes(nc1$var)$names
+long_names <- vector("character", length = 11)
+  
+for (i in 1:11) {
+   long_names[[i]] <- ncatt_get(nc1, attributes(nc1$var)$names[[i]])$long_name
+}
+long_names
+
+short_names <- c("evap", "longwave", "shortwave", "cape", "con_frac", "precip", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")
+
+variables <- as_tibble(cbind(var_names, long_names, short_names))
+
+var_list <- list(
+  var_row = 1:nrow(variables),          
+  var_name = variables$short_names
+)
+
+# Close the connection to the nc file
+nc_close(nc1)
+```
+
+
+```{r slow_loop, eval = FALSE}
+tidy_ncdf <- function(files) {
+     for (i in seq_along(files)) {
+      for (j in seq_along(var_list$var_row)) {   
+        # open a conneciton to the ith nc file
+        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        # store values from variables and atributes
+        nc_names <- paste("nc", var_list$var_name[j], sep = "_")
+        nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
+        nc_time <- ncatt_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])$initial_time
+        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
+        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+        # close the connection 
+        nc_close(nc_store)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_names) <- list(lon = nc_lon, lat = nc_lat)
+
+        store_nc_names <- nc_names %>% reshape2::melt(., value.name = var_list$var_name[j]) %>% 
+          gather(., key = variable, value = value, var_list$var_name[j]) %>% 
+          mutate(initial_time = nc_time)
+
+        # set the name of new variable and bind the new data to it
+        if (exists("var_data")) {
+            var_data <- bind_rows(var_data, store_nc_names)
+ 
+        }else{
+            var_data <- store_nc_names
+
+          }
+      }
+     }
+    return(var_data)
+}
+
+```
+
+
+## Run data processing function
+```{r run_function}
+
+nldas_data <- tidy_ncdf(file_list)
+
+#Time function
+ptm <- proc.time()
+tidy_ncdf(file_list)
+proc.time() - ptm
+  # elapsed (5 days) = 11.46 sec
+
+as_tibble(nldas_data)
+
+
+```
+
+
+
+
+
+
+```{r tidync}
+
+paste0("C:/Users/slewa/Documents/data/heat/bragg_1979/", files[i])
+
+file_name <- paste0("C:/Users/slewa/Documents/data/heat/bragg_test/", file_list[1])
+
+file_path <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_test", pattern = "^.*\\.(nc|NC|Nc|Nc)$", full.names = TRUE)
+file_path %>% head()
+
+file_name %>% tidync() %>% hyper_tibble()
+
+hyper_tibble(tidync(file_name)) %>% 
+    mutate(file_name = file_name)
+
+```
+
+
+5-day dataset
+```{r}
+read_ncdf <- function(input_file) {
+  
+  hyper_tibble(tidync(input_file)) %>% 
+    mutate(file_name = input_file)
+}
+
+ptm <- proc.time()
+df_out <- purrr::map_dfr(file_path, read_ncdf) 
+proc.time() - ptm
+
+#24 sec
+
+plan(multiprocess)
+ptm <- proc.time()
+df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE) %>% 
+    mutate(file_name = input_file)
+proc.time() - ptm
+
+#6.3 sec
+
+
+```
+
+One-year dataset
+```{r}
+file_path <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_1979", pattern = "^.*\\.(nc|NC|Nc|Nc)$", full.names = TRUE)
+
+
+read_ncdf <- function(input_file) {
+  
+  hyper_tibble(tidync(input_file)) %>% 
+    mutate(file_name = input_file)
+}
+
+ptm <- proc.time()
+df_out <- purrr::map_dfr(file_path, read_ncdf) %>% 
+    mutate(file_name = input_file)
+proc.time() - ptm
+```
+
+One-year dataset- furrr
+```{r}
+
+
+file_path <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_1979", pattern = "^.*\\.(nc|NC|Nc|Nc)$", full.names = TRUE)
+
+
+read_ncdf <- function(input_file) {
+  
+  hyper_tibble(tidync(input_file)) %>% 
+    mutate(file_name = input_file)
+}
+
+plan(multiprocess)
+ptm <- proc.time()
+df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE)
+proc.time() - ptm
+
+# 541.5 sec
+```
+
