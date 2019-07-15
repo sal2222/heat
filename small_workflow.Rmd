@@ -178,10 +178,10 @@ proc.time() - ptm
 
 plan(multiprocess)
 ptm <- proc.time()
-df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE) %>% 
-    mutate(file_name = input_file)
+df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE) 
 proc.time() - ptm
 
+df_out
 #6.3 sec
 
 

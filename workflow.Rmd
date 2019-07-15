@@ -1,0 +1,170 @@
+---
+title: "workflow"
+author: "SL"
+date: "July 15, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(tidyverse)
+library(viridis)
+library(rvest)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+library(lwgeom)
+library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
+library(lubridate)
+library(flipTime)
+library(fuzzyjoin)
+library(RNetCDF)
+library(tidync)
+library(furrr)
+```
+
+```{r}
+
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+army_select <-
+bases %>% 
+  filter(.$site_name %in% c("Fort Bragg", "Fort Benning GA", "Fort Benning", "Fort Campbell" ))
+
+bragg <-
+bases %>% 
+  filter(.$site_name == "Fort Bragg")
+
+bb_bragg <-
+st_bbox(bragg) %>% 
+  .[c("ymin", "xmin", "ymax", "xmax")]
+
+bb_bragg
+
+bragg_centroid <- st_centroid(bragg)
+
+```
+
+```{r}
+nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
+  janitor::clean_names()
+
+bragg_nldas <-
+  st_intersection(bragg, nldas_grid) %>% 
+  mutate(area = sf::st_area(.),
+         weight = area / sum(area))
+
+```
+
+```{r}
+
+file_list <- list.files(path = "C:/Users/slewa/Documents/data/heat/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$")
+
+file_name <- paste0("C:/Users/slewa/Documents/data/heat/nldas/", file_list[1])
+
+
+# Open a connection to the first file in  list
+nc1 <- ncdf4::nc_open(file_name)
+
+var_names <- attributes(nc1$var)$names
+long_names <- vector("character", length = 11)
+  
+for (i in 1:11) {
+   long_names[[i]] <- ncatt_get(nc1, attributes(nc1$var)$names[[i]])$long_name
+}
+long_names
+
+short_names <- c("evap", "longwave", "shortwave", "cape", "con_frac", "precip", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")
+
+variables <- as_tibble(cbind(var_names, long_names, short_names))
+
+var_list <- list(
+  var_row = 1:nrow(variables),          
+  var_name = variables$short_names
+)
+
+# Close the connection to the nc file
+nc_close(nc1)
+```
+
+```{r}
+
+tidync("C:/Users/slewa/Documents/data/heat/nldas/NLDAS_FORA0125_H.A20000101.0000.002.grb.SUB.nc4") %>% activate(grid_identifier) %>% hyper_tibble()
+
+nc_test <-
+  tidync("C:/Users/slewa/Documents/data/heat/nldas/NLDAS_FORA0125_H.A20000101.0000.002.grb.SUB.nc4") %>%    
+    hyper_filter(
+      lat = between(lat, 35.04, 35.27 ),
+      lon = between(lon, -79.38, -78.90)) 
+
+hyper_vars(nc_test)
+hyper_dims(nc_test)
+hyper_grids(nc_test)
+
+
+a <-
+nc_test %>% 
+  activate("D0,D1,D2,D5") %>% 
+  hyper_tibble() %>% 
+  dplyr::select(lon, lat, TMP, SPFH)
+
+b <-
+nc_test %>% 
+  activate("D0,D1,D3,D5") %>% 
+  hyper_tibble() %>% 
+  dplyr::select(-height_2, -time)
+
+c <- 
+nc_test %>% 
+  activate("D0,D1,D5") %>% 
+  hyper_tibble() %>% 
+  dplyr::select(-DLWRF, -CONVfrac, -PEVAP, -APCP, -time)
+
+left_join(a, b, by = c("lat", "lon")) %>% 
+  left_join(., c, by = c("lat", "lon")) %>% 
+    mutate(file_name = file_name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+read_ncdf <- function(input_file) {
+  
+  hyper_tibble(tidync(input_file)) %>% 
+    mutate(file_name = input_file)
+}
+
+ptm <- proc.time()
+df_out <- purrr::map_dfr(file_path, read_ncdf) 
+proc.time() - ptm
+
+
+
+plan(multiprocess)
+ptm <- proc.time()
+df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE) 
+proc.time() - ptm
+
+df_out
+```
+

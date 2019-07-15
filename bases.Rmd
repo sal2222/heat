@@ -27,7 +27,6 @@ Metadata updated date: January 18, 2017
 bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
   janitor::clean_names()
 
-
 # convert to SpatialPolygonsDataFrame
 # bases_sp <- as(bases, "Spatial")
 
@@ -37,7 +36,6 @@ st_crs(bases)
 
 as_tibble(bases)
 ```
-
 
 ## Select Active Army Installations
 
@@ -49,7 +47,6 @@ bases %>%
 
 ```
 
-
 ## Feature information
 ```{r feature_information}
 bases_geom <- st_geometry(bases)
@@ -57,7 +54,6 @@ st_geometry(bases) %>% class()
 attributes(bases_geom)
 bases_geom[[1]] %>% class
 ```
-
 
 ## Inspection plot - world
 ```{r world_plot}
@@ -101,7 +97,6 @@ ggplot(bragg) +
   geom_sf() +
   theme_bw()
 
-
 ggplot(bases %>% 
   filter(.$site_name %in% c("Fort Benning GA", "Fort Benning"))) +
   ggtitle("Fort Benning") +
@@ -109,7 +104,6 @@ ggplot(bases %>%
   theme_bw()
 
 ```
-
 
 ## Load NLDAS grids
 NLDAS grid shapefile from: https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_Grid_Reference.zip
@@ -125,8 +119,6 @@ st_crs(nldas_grid)
 
 as_tibble(nldas_grid)
 
-
-
 ```
 
 
@@ -139,15 +131,11 @@ bragg_nldas <-
   mutate(area = sf::st_area(.),
          weight = area / sum(area))
 
-
 bragg_intersects <-
   nldas_grid %>% filter(lengths(st_intersects(., bragg)) > 0)
 
 as.data.frame(bragg_intersects) %>% 
   select(-geometry)
-
-
-
 
 bragg_nldas
 
@@ -169,7 +157,6 @@ ggplot(bragg_nldas) +
 ```{r bounding_box}
 st_bbox(bragg) %>% 
   .[c("ymin", "xmin", "ymax", "xmax")]
-
 
 bb_bragg <- st_as_sfc(st_bbox(bragg))
 class(bb_bragg)

@@ -237,10 +237,56 @@ tidy_ncdf <- function(files) {
 
 ```
 
+```{r optimize loop}
+
+tidy_ncdf <- function(files) {
+     for (i in seq_along(files)) {
+      for (j in seq_along(var_list$var_row)) {   
+        # open a conneciton to the ith nc file
+        nc_store <- nc_open(paste0("nldas_data/bragg_test/", files[i]))
+        # store values from variables and atributes
+        nc_names <- paste("nc", var_list$var_name[j], sep = "_")
+        nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
+        nc_time <- ncatt_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])$initial_time
+        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
+        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+        # close the connection 
+        nc_close(nc_store)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_names) <- list(lon = nc_lon, lat = nc_lat)
+
+        store_nc_names <- nc_names %>% reshape2::melt(., value.name = var_list$var_name[j]) %>% 
+          gather(., key = variable, value = value, var_list$var_name[j]) %>% 
+          mutate(initial_time = nc_time)
+
+        # set the name of new variable and bind the new data to it
+        if (exists("var_data")) {
+            var_data <- bind_rows(var_data, store_nc_names)
+ 
+        }else{
+            var_data <- store_nc_names
+
+          }
+      }
+     }
+    return(var_data)
+}
+
+```
+
+
+
 ## Run data processing function
 ```{r run_function}
 
 nldas_data <- tidy_ncdf(file_list)
+
+#Time function
+ptm <- proc.time()
+tidy_ncdf(file_list)
+proc.time() - ptm
+  # elapsed (5 days) = 11.25 sec
+
 as_tibble(nldas_data)
 
 # Summary table (variable means)

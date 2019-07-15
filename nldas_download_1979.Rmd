@@ -99,7 +99,7 @@ attributes(nc1$var)$names
 ncdf4::ncatt_get(nc1, attributes(nc1$var)$names[10])
 
 # Retrieve a matrix of the data using the ncvar_get function
-temp <- ncvar_get(nc1, attributes(nc1$var)$names[10])
+temperature <- ncvar_get(nc1, attributes(nc1$var)$names[10])
 
 # Print the data's dimensions
 dim(temp)
@@ -170,13 +170,13 @@ print_list(nc1)
 ```{r examine_matrix, eval = FALSE}
 # Change the dimension names of our matrix to "lon" and "lat" 
 # Change the row and column names to the latitude and longitude values
-dimnames(temp) <- 
+dimnames(temperature) <- 
   list(lon = nc1_lon, lat = nc1_lat) 
-temp
+temperature
 
 # Transpose matrix
-temp <- t(temp)
-temp
+temperature <- t(temperature)
+temperature
 
 ```
 
@@ -274,6 +274,9 @@ as_tibble(fuzzy)
 summary(fuzzy$lat.distance)
 summary(fuzzy$lon.distance)
 
+fuzzy %>% group_by(variable) %>% 
+  summarise(mean_value = mean(value))
+
 ```
 
 
@@ -295,6 +298,13 @@ fuzzy %>%
   geom_line() +
   viridis::scale_fill_viridis() +
   theme_bw()
+
+variables
+
+fuzzy %>% 
+  filter(variable == c("shortwave", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")) %>% 
+  spread(key = variable, value = value) %>% 
+  as_tibble()
 
 ```
 
