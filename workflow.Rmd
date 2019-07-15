@@ -128,41 +128,61 @@ nc_test %>%
 
 left_join(a, b, by = c("lat", "lon")) %>% 
   left_join(., c, by = c("lat", "lon")) %>% 
-    mutate(file_name = file_name)
+    mutate(date_time = 
+             file_name %>% 
+              stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>% 
+                flipTime::AsDateTime(.))
 
 
+```
 
 
+```{r}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-read_ncdf <- function(input_file) {
+read_nc4 <- function(input_file) {
   
-  hyper_tibble(tidync(input_file)) %>% 
-    mutate(file_name = input_file)
+  nc4 <- tidync(input_file) %>%    
+    hyper_filter(
+      lat = between(lat, 35.04, 35.27 ),
+      lon = between(lon, -79.38, -78.90)) 
+  
+    a <-
+      nc4 %>% 
+        activate("D0,D1,D2,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(lon, lat, TMP, SPFH)
+
+    b <-
+      nc4 %>% 
+        activate("D0,D1,D3,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(-height_2, -time)
+
+    c <- 
+      nc4 %>% 
+        activate("D0,D1,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(-DLWRF, -CONVfrac, -PEVAP, -APCP, -time)
+
+    left_join(a, b, by = c("lat", "lon")) %>% 
+      left_join(., c, by = c("lat", "lon")) %>% 
+        mutate(date_time = 
+                 file_name %>% 
+                  stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>% 
+                    flipTime::AsDateTime(.)) 
+
 }
 
-ptm <- proc.time()
-df_out <- purrr::map_dfr(file_path, read_ncdf) 
-proc.time() - ptm
+
 
 
 
 plan(multiprocess)
 ptm <- proc.time()
+
 df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE) 
+
 proc.time() - ptm
 
 df_out
