@@ -16,6 +16,9 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(rgeos)
 library(lwgeom)
+library(cowplot)
+library(purrr)
+library(purrrlyr)
 
 ```
 
@@ -37,16 +40,6 @@ st_crs(bases)
 as_tibble(bases)
 ```
 
-## Select Active Army Installations
-
-Note: FSH, TX listed under Air Force; Fort Benning split between GA and AL
-```{r select_army}
-bases %>% 
-  filter(component == "Army Active") %>% 
-  .$site_name
-
-```
-
 ## Feature information
 ```{r feature_information}
 bases_geom <- st_geometry(bases)
@@ -63,26 +56,77 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 ggplot() +
   geom_sf(data = world, fill = NA) +
   geom_sf(data = bases, color = "darkgreen", fill = "lightgreen") +
-  ggtitle("DoD Installations") +
+  coord_sf(xlim = c(-125, -67), ylim = c(25,53)) +
+  ggtitle("DoD Installations in NLDAS Coverage") +
   theme_bw()
 
 ```
 
 ## Select specific installations
+```{r join_split_shapefiles}
 
-```{r select_bases}
+## Join Fort Benning Georgia and Alabama shapefiles (st_union)
+benning_geom <-
+  bases %>%
+    filter(stringr::str_detect(site_name, "Fort Benning")) %>% 
+    dplyr::select(geometry) %>% st_union() 
+
+
+```
+
+## Select installations
+```{r select_sf_dataframe}
+## Create dataframe of active duty Army installations, including FSH (JBSA) and single Fort Benning row 
+
+army_bases <-
+  bases %>%
+    filter(oper_stat == "Active") %>% 
+    mutate(component = replace(component, site_name == "Fort Sam Houston", "Army Active")) %>%
+    filter(component == "Army Active") %>%
+    filter(site_name != "Fort Benning") %>%
+    mutate(geometry = replace(geometry, site_name == "Fort Benning GA", benning_geom ))
+   
+
+## Filter installations of interest
+
 army_select <-
-bases %>% 
-  filter(.$site_name %in% c("Fort Bragg", "Fort Benning GA", "Fort Benning", "Fort Campbell" ))
+  army_bases %>% 
+    dplyr::filter(.$site_name %in% c("Fort Benning GA", "Fort Bragg","Fort Campbell",
+                              "Fort Jackson", "Fort Polk", "Fort Hood",
+                              "Fort Stewart", "Fort Leonard Wood", "Fort Riley",
+                              "NTC and Fort Irwin")) %>% 
+    mutate(centroid = st_centroid(geometry)) %>% 
+    dplyr::select(-c("component", "joint_base", "country", "oper_stat"))
 
-ggplot(army_select) +
-  ggtitle("Bragg. Benning, Campbell") +
-  geom_sf() +
-  theme_bw()
 
+st_crs(army_select)
+as_tibble(army_select)
+```
+
+## Plot selected shapefiles
+
+```{r plot_selected_bases}
+
+## Plot selected installations
+bases_plot <- purrr::map(army_select$site_name,
+           function(x) {
+             ggplot() +
+               geom_sf(data = filter(army_select, site_name == x)) +
+                ggtitle(x) +
+                theme_bw() +
+                theme(axis.text.x = element_text(size = rel(0.6)),
+                      axis.text.y = element_text(size = rel(0.6))) 
+           })
+
+cowplot::plot_grid(plotlist = bases_plot)
+```
+
+
+```{r individual_base, eval = FALSE}
 bragg <-
-bases %>% 
-  filter(.$site_name == "Fort Bragg")
+  bases %>% 
+    filter(.$site_name == "Fort Bragg")
+
 
 # Save shapefile
 # st_write(bragg, "bragg.shp")
@@ -96,14 +140,8 @@ ggplot(bragg) +
   ggtitle("Fort Bragg") +
   geom_sf() +
   theme_bw()
-
-ggplot(bases %>% 
-  filter(.$site_name %in% c("Fort Benning GA", "Fort Benning"))) +
-  ggtitle("Fort Benning") +
-  geom_sf() +
-  theme_bw()
-
 ```
+
 
 ## Load NLDAS grids
 NLDAS grid shapefile from: https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_Grid_Reference.zip
@@ -113,10 +151,7 @@ NLDAS grid shapefile from: https://ldas.gsfc.nasa.gov/sites/default/files/ldas/n
 nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
   janitor::clean_names()
 
-class(nldas_grid)
-glimpse(nldas_grid)
 st_crs(nldas_grid)
-
 as_tibble(nldas_grid)
 
 ```
@@ -124,8 +159,8 @@ as_tibble(nldas_grid)
 
 ## NLDAS and Installation Grid Overlap and Weighted Averages
 
-```{r nldas_intersection}
-
+```{r nldas_intersection_indiv}
+class(bragg)
 bragg_nldas <-
   st_intersection(bragg, nldas_grid) %>% 
   mutate(area = sf::st_area(.),
@@ -153,8 +188,45 @@ ggplot(bragg_nldas) +
 
 ```
 
+
+```{r nldas_intersection_selected}
+
+# Identify all NLDAS grids intersected by installation shapefiles
+
+bases_nldas = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_nldas = st_intersection(base, nldas_grid) 
+  bases_nldas = rbind(bases_nldas, base_nldas)
+}
+rm(base, base_nldas)
+bases_nldas
+
+
+# Calculate area of installation in each NLDAS grid and weight for spatial weighted average
+nldas_weights <- bases_nldas %>% 
+    mutate(area = sf::st_area(.$geometry)) %>% 
+  group_by(site_name) %>% 
+    mutate(sum_area = sum(area)) %>% 
+  ungroup() %>% 
+  mutate(weight = area / sum(area))
+
+
+# NLDAS grids that intersect with bases (to map full grid squares)
+intersects = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_intersect = nldas_grid %>% filter(lengths(st_intersects(., base)) > 0)
+  intersects = rbind(intersects, base_intersect)
+}
+rm(base, base_intersect)
+intersects
+  
+```
+
+
 ## Bounding box for installation
-```{r bounding_box}
+```{r bounding_box_indiv, eval=FALSE}
 st_bbox(bragg) %>% 
   .[c("ymin", "xmin", "ymax", "xmax")]
 
@@ -164,7 +236,26 @@ class(bb_bragg)
 
 ```
 
-Plots of intersecting NLDAS grids
+
+```{r bounding_box}
+
+bbox = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_bbox = st_bbox(base)
+  bbox = rbind(bbox, base_bbox)
+}
+rm(base, base_bbox)
+
+bbox <-
+  as_tibble(army_select[,1]) %>% 
+    bind_cols(as_tibble(bbox))
+bbox
+
+```
+
+
+## Plots of intersecting NLDAS grids
 ```{r grid_plots}
 ggplot() +
   geom_sf(data = bragg_nldas) +

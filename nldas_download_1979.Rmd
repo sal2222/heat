@@ -64,6 +64,11 @@ Command
 `wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --
 content-disposition -i C:\Users\slewa\Documents\data\heat\bragg_1979_urls.txt -P C:\Users\slewa\Documents\data\heat\bragg_1979`
 
+
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i C:\Users\slewa\Documents\data\heat\2000s_urls.txt -P E:\nldas
+
+
+
 Start: 08 JUL 13:06
 (FINISHED --2019-07-09 09:59:55--
 Total wall clock time: 20h 54m 0s

@@ -207,7 +207,7 @@ proc.time() - ptm
 One-year dataset- furrr
 ```{r}
 
-
+tidync(file_name)
 file_path <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_1979", pattern = "^.*\\.(nc|NC|Nc|Nc)$", full.names = TRUE)
 
 
@@ -223,5 +223,9 @@ df_out <- furrr::future_map_dfr(file_path, read_ncdf, .progress = TRUE)
 proc.time() - ptm
 
 # 541.5 sec
+```
+
+```{r}
+tidync(paste0("C:/Users/slewa/Documents/data/heat/bragg_test/", file_list[1]))
 ```
 
