@@ -3,8 +3,8 @@ Shapefile and Grid Geometries
 SL
 July 1, 2019
 
-Load MIRTA Data
----------------
+Load Military Installations, Ranges, and Training Areas (MIRTA) Dataset
+-----------------------------------------------------------------------
 
 Accessed from: <https://catalog.data.gov/dataset/military-installations-ranges-and-training-areas> Metadata updated date: January 18, 2017
 
@@ -25,7 +25,6 @@ bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>%
 ``` r
 # convert to SpatialPolygonsDataFrame
 # bases_sp <- as(bases, "Spatial")
-
 st_crs(bases)
 ```
 
@@ -52,43 +51,13 @@ as_tibble(bases)
     ## 10 Army Gua~ NG Aubur~ N/A        Maine      United~ Active   
     ## # ... with 740 more rows, and 1 more variable: geometry <MULTIPOLYGON [°]>
 
-Feature information
--------------------
-
 ``` r
+## Feature information
 bases_geom <- st_geometry(bases)
 st_geometry(bases) %>% class()
-```
-
-    ## [1] "sfc_MULTIPOLYGON" "sfc"
-
-``` r
 attributes(bases_geom)
-```
-
-    ## $n_empty
-    ## [1] 0
-    ## 
-    ## $crs
-    ## Coordinate Reference System:
-    ##   EPSG: 4326 
-    ##   proj4string: "+proj=longlat +datum=WGS84 +no_defs"
-    ## 
-    ## $class
-    ## [1] "sfc_MULTIPOLYGON" "sfc"             
-    ## 
-    ## $precision
-    ## [1] 0
-    ## 
-    ## $bbox
-    ##       xmin       ymin       xmax       ymax 
-    ## -168.85755   13.30706  174.15652   64.87792
-
-``` r
 bases_geom[[1]] %>% class
 ```
-
-    ## [1] "XY"           "MULTIPOLYGON" "sfg"
 
 Inspection plot - world
 -----------------------
@@ -106,7 +75,7 @@ ggplot() +
 
 ![](bases_files/figure-markdown_github/world_plot-1.png)
 
-Select specific installations
+Modify specific installations
 -----------------------------
 
 ``` r
@@ -142,12 +111,8 @@ army_select <-
                               "NTC and Fort Irwin")) %>% 
     mutate(centroid = st_centroid(geometry)) %>% 
     dplyr::select(-c("component", "joint_base", "country", "oper_stat"))
-```
 
-    ## Warning in st_centroid.sfc(geometry): st_centroid does not give correct
-    ## centroids for longitude/latitude data
 
-``` r
 st_crs(army_select)
 ```
 
@@ -192,26 +157,6 @@ cowplot::plot_grid(plotlist = bases_plot)
 ```
 
 ![](bases_files/figure-markdown_github/plot_selected_bases-1.png)
-
-``` r
-bragg <-
-  bases %>% 
-    filter(.$site_name == "Fort Bragg")
-
-
-# Save shapefile
-# st_write(bragg, "bragg.shp")
-
-st_centroid(bragg) %>% 
-  as.tibble()
-
-bragg_centroid <- st_centroid(bragg)
-
-ggplot(bragg) +
-  ggtitle("Fort Bragg") +
-  geom_sf() +
-  theme_bw()
-```
 
 Load NLDAS grids
 ----------------
@@ -262,34 +207,6 @@ NLDAS and Installation Grid Overlap and Weighted Averages
 ---------------------------------------------------------
 
 ``` r
-class(bragg)
-bragg_nldas <-
-  st_intersection(bragg, nldas_grid) %>% 
-  mutate(area = sf::st_area(.),
-         weight = area / sum(area))
-
-bragg_intersects <-
-  nldas_grid %>% filter(lengths(st_intersects(., bragg)) > 0)
-
-as.data.frame(bragg_intersects) %>% 
-  select(-geometry)
-
-bragg_nldas
-
-sum(bragg_nldas$area)
-sum(bragg_nldas$weight)
-st_area(bragg_nldas) 
-
-
-ggplot(bragg_nldas) + 
-  ggtitle("Fort Bragg NLDAS grids") +
-  geom_sf() +
-  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
-  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
-  theme_bw()
-```
-
-``` r
 # Identify all NLDAS grids intersected by installation shapefiles
 
 bases_nldas = NULL
@@ -298,20 +215,6 @@ for (i in 1:nrow(army_select)) {
   base_nldas = st_intersection(base, nldas_grid) 
   bases_nldas = rbind(bases_nldas, base_nldas)
 }
-```
-
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-
-``` r
 rm(base, base_nldas)
 bases_nldas
 ```
@@ -364,21 +267,6 @@ for (i in 1:nrow(army_select)) {
   base_intersect = nldas_grid %>% filter(lengths(st_intersects(., base)) > 0)
   intersects = rbind(intersects, base_intersect)
 }
-```
-
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-
-``` r
 rm(base, base_intersect)
 
 # Join `site_name` to selected NLDAS grid geometries
@@ -462,6 +350,7 @@ ggplot() +
 ```
 
 ``` r
+# Faceted maps
 tm_shape(intersects) +
   tm_borders() +
   tm_text("nldas_id", size = 0.5) +
@@ -473,3 +362,33 @@ tm_shape(intersects) +
 ```
 
 ![](bases_files/figure-markdown_github/grid_plots-1.png)
+
+``` r
+# tm_shape(intersects %>%  filter(site_name == "Fort Polk")) +
+#  tm_borders() +
+#  tm_text("nldas_id", size = 0.5) +
+#  tm_shape(nldas_weights %>% filter(site_name == "Fort Polk")) +
+#  tm_borders() +
+#  tm_graticules(col = "gray90", alpha = 0.5, labels.size = 0.5) +
+#    tm_layout(title = "Fort Polk")
+
+ 
+# Individual site maps 
+
+site_list <- unique(as.character(army_select$site_name))
+
+for (i in seq_along(site_list)) { 
+site_plot <-
+  tm_shape(intersects %>%  filter(site_name == site_list[i])) +
+  tm_borders() +
+  tm_text("nldas_id", size = 0.7) +
+  tm_shape(nldas_weights %>% filter(site_name == site_list[i])) +
+  tm_borders() +
+  tm_fill(col = "darkolivegreen4", alpha = 0.2) +
+  tm_graticules(col = "gray90", alpha = 0.3, labels.size = 0.8) +
+    tm_layout(title = site_list[i])
+print(site_plot)
+}
+```
+
+![](bases_files/figure-markdown_github/grid_plots-2.png)![](bases_files/figure-markdown_github/grid_plots-3.png)![](bases_files/figure-markdown_github/grid_plots-4.png)![](bases_files/figure-markdown_github/grid_plots-5.png)![](bases_files/figure-markdown_github/grid_plots-6.png)![](bases_files/figure-markdown_github/grid_plots-7.png)![](bases_files/figure-markdown_github/grid_plots-8.png)![](bases_files/figure-markdown_github/grid_plots-9.png)![](bases_files/figure-markdown_github/grid_plots-10.png)![](bases_files/figure-markdown_github/grid_plots-11.png)

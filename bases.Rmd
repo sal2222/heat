@@ -23,7 +23,7 @@ library(tmap)
 
 ```
 
-## Load MIRTA Data
+## Load Military Installations, Ranges, and Training Areas (MIRTA) Dataset
 Accessed from: https://catalog.data.gov/dataset/military-installations-ranges-and-training-areas
 Metadata updated date: January 18, 2017
 ```{r load_shapefile}
@@ -33,14 +33,13 @@ bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>%
 
 # convert to SpatialPolygonsDataFrame
 # bases_sp <- as(bases, "Spatial")
-
 st_crs(bases)
-
 as_tibble(bases)
 ```
 
+
+```{r feature_information, eval = FALSE}
 ## Feature information
-```{r feature_information}
 bases_geom <- st_geometry(bases)
 st_geometry(bases) %>% class()
 attributes(bases_geom)
@@ -61,7 +60,7 @@ ggplot() +
 
 ```
 
-## Select specific installations
+## Modify specific installations
 ```{r join_split_shapefiles}
 
 ## Join Fort Benning Georgia and Alabama shapefiles (st_union)
@@ -74,7 +73,7 @@ benning_geom <-
 ```
 
 ## Select installations
-```{r select_sf_dataframe}
+```{r select_sf_dataframe, warning = FALSE}
 ## Create dataframe of active duty Army installations, including FSH (JBSA) and single Fort Benning row 
 
 army_bases <-
@@ -121,7 +120,7 @@ cowplot::plot_grid(plotlist = bases_plot)
 ```
 
 
-```{r individual_base, eval = FALSE}
+```{r individual_base, include = FALSE, eval = FALSE}
 bragg <-
   bases %>% 
     filter(.$site_name == "Fort Bragg")
@@ -158,7 +157,7 @@ as_tibble(nldas_grid)
 
 ## NLDAS and Installation Grid Overlap and Weighted Averages
 
-```{r nldas_intersection_indiv, eval = FALSE}
+```{r nldas_intersection_indiv, include = FALSE, eval = FALSE}
 class(bragg)
 bragg_nldas <-
   st_intersection(bragg, nldas_grid) %>% 
@@ -188,7 +187,7 @@ ggplot(bragg_nldas) +
 ```
 
 
-```{r nldas_intersection_selected, warning = FALSE}
+```{r nldas_intersection_selected, warning = FALSE, message = FALSE}
 
 # Identify all NLDAS grids intersected by installation shapefiles
 
@@ -293,6 +292,7 @@ ggplot() +
 
 ```{r grid_plots}
 
+# Faceted maps
 tm_shape(intersects) +
   tm_borders() +
   tm_text("nldas_id", size = 0.5) +
@@ -301,6 +301,34 @@ tm_shape(intersects) +
   tm_graticules(col = "gray90", alpha = 0.5, labels.size = 0.5) +
   tm_facets(by = "site_name") +
   tm_layout(panel.label.size = 0.8, panel.label.height = 0.8)
+
+
+# tm_shape(intersects %>%  filter(site_name == "Fort Polk")) +
+#  tm_borders() +
+#  tm_text("nldas_id", size = 0.5) +
+#  tm_shape(nldas_weights %>% filter(site_name == "Fort Polk")) +
+#  tm_borders() +
+#  tm_graticules(col = "gray90", alpha = 0.5, labels.size = 0.5) +
+#    tm_layout(title = "Fort Polk")
+
+ 
+# Individual site maps 
+
+site_list <- unique(as.character(army_select$site_name))
+
+for (i in seq_along(site_list)) { 
+site_plot <-
+  tm_shape(intersects %>%  filter(site_name == site_list[i])) +
+  tm_borders() +
+  tm_text("nldas_id", size = 0.7) +
+  tm_shape(nldas_weights %>% filter(site_name == site_list[i])) +
+  tm_borders() +
+  tm_fill(col = "darkolivegreen4", alpha = 0.2) +
+  tm_graticules(col = "gray90", alpha = 0.3, labels.size = 0.8) +
+    tm_layout(title = site_list[i])
+print(site_plot)
+}
+
 
 
 
