@@ -1,5 +1,5 @@
 ---
-title: "mirta"
+title: "Shapefile and Grid Geometries"
 author: "SL"
 date: "July 1, 2019"
 output: github_document
@@ -19,6 +19,7 @@ library(lwgeom)
 library(cowplot)
 library(purrr)
 library(purrrlyr)
+library(tmap)
 
 ```
 
@@ -33,8 +34,6 @@ bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>%
 # convert to SpatialPolygonsDataFrame
 # bases_sp <- as(bases, "Spatial")
 
-class(bases)
-glimpse(bases)
 st_crs(bases)
 
 as_tibble(bases)
@@ -159,7 +158,7 @@ as_tibble(nldas_grid)
 
 ## NLDAS and Installation Grid Overlap and Weighted Averages
 
-```{r nldas_intersection_indiv}
+```{r nldas_intersection_indiv, eval = FALSE}
 class(bragg)
 bragg_nldas <-
   st_intersection(bragg, nldas_grid) %>% 
@@ -189,7 +188,7 @@ ggplot(bragg_nldas) +
 ```
 
 
-```{r nldas_intersection_selected}
+```{r nldas_intersection_selected, warning = FALSE}
 
 # Identify all NLDAS grids intersected by installation shapefiles
 
@@ -207,9 +206,9 @@ bases_nldas
 nldas_weights <- bases_nldas %>% 
     mutate(area = sf::st_area(.$geometry)) %>% 
   group_by(site_name) %>% 
-    mutate(sum_area = sum(area)) %>% 
-  ungroup() %>% 
-  mutate(weight = area / sum(area))
+    mutate(sum_area = sum(area),
+           weight = (area / sum_area)) 
+
 
 
 # NLDAS grids that intersect with bases (to map full grid squares)
@@ -220,13 +219,16 @@ for (i in 1:nrow(army_select)) {
   intersects = rbind(intersects, base_intersect)
 }
 rm(base, base_intersect)
-intersects
+
+# Join `site_name` to selected NLDAS grid geometries
+
+intersects <- intersects %>% left_join(select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
   
 ```
 
 
 ## Bounding box for installation
-```{r bounding_box_indiv, eval=FALSE}
+```{r bounding_box_indiv, eval=FALSE, warning = FALSE}
 st_bbox(bragg) %>% 
   .[c("ymin", "xmin", "ymax", "xmax")]
 
@@ -247,17 +249,27 @@ for (i in 1:nrow(army_select)) {
 }
 rm(base, base_bbox)
 
+
 bbox <-
   as_tibble(army_select[,1]) %>% 
     bind_cols(as_tibble(bbox))
-bbox
 
+bbox %>% 
+  select(-geometry) %>% 
+  print()
+
+army_select <- bbox %>% 
+  select(-geometry) %>%
+  right_join(army_select, by = "site_name")
+
+    
+  
 ```
 
 
 ## Plots of intersecting NLDAS grids
-```{r grid_plots}
-ggplot() +
+```{r grid_plots_indiv, eval = FALSE}
+ggplot() + 
   geom_sf(data = bragg_nldas) +
   geom_sf(data = bb_bragg , color = "blue", fill = "NA") +
   geom_sf(data = bragg_centroid, color = "red") +
@@ -279,3 +291,19 @@ ggplot() +
 
 ```
 
+```{r grid_plots}
+
+tm_shape(intersects) +
+  tm_borders() +
+  tm_text("nldas_id", size = 0.5) +
+  tm_shape(nldas_weights) +
+  tm_borders() +
+  tm_graticules(col = "gray90", alpha = 0.5, labels.size = 0.5) +
+  tm_facets(by = "site_name") +
+  tm_layout(panel.label.size = 0.8, panel.label.height = 0.8)
+
+
+
+
+
+```

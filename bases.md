@@ -1,4 +1,4 @@
-mirta
+Shapefile and Grid Geometries
 ================
 SL
 July 1, 2019
@@ -26,26 +26,6 @@ bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>%
 # convert to SpatialPolygonsDataFrame
 # bases_sp <- as(bases, "Spatial")
 
-class(bases)
-```
-
-    ## [1] "sf"         "data.frame"
-
-``` r
-glimpse(bases)
-```
-
-    ## Observations: 750
-    ## Variables: 7
-    ## $ component  <fct> Army Guard, Army Guard, Army Guard, Army Guard, Arm...
-    ## $ site_name  <fct> "Orchard Range TS Boise", "Fort Pickett, ARNG MTC",...
-    ## $ joint_base <fct> N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N/A, N...
-    ## $ state_terr <fct> Idaho, Virginia, Iowa, Missouri, Michigan, Tennesse...
-    ## $ country    <fct> United States, United States, United States, United...
-    ## $ oper_stat  <fct> Active, Active, Active, Active, Active, Active, Act...
-    ## $ geometry   <MULTIPOLYGON [°]> MULTIPOLYGON (((-116.1344 4..., MULTIP...
-
-``` r
 st_crs(bases)
 ```
 
@@ -71,137 +51,6 @@ as_tibble(bases)
     ##  9 Army Gua~ NG Young~ N/A        New York   United~ Active   
     ## 10 Army Gua~ NG Aubur~ N/A        Maine      United~ Active   
     ## # ... with 740 more rows, and 1 more variable: geometry <MULTIPOLYGON [°]>
-
-Select Active Army Installations
---------------------------------
-
-Note: FSH, TX listed under Air Force; Fort Benning split between GA and AL
-
-``` r
-bases %>% 
-  filter(component == "Army Active") %>% 
-  .$site_name
-```
-
-    ##   [1] Fort Monroe                                 
-    ##   [2] Radford AAP                                 
-    ##   [3] Walter Reed AMC Main Post                   
-    ##   [4] Kansas AAP                                  
-    ##   [5] Newport Chem Depot                          
-    ##   [6] Defense Distrib Depot Susq                  
-    ##   [7] Detroit Arsenal                             
-    ##   [8] Fort Benning GA                             
-    ##   [9] Fort Benning                                
-    ##  [10] Military Ocean Tml Sunny Point              
-    ##  [11] Tobyhanna Army Depot                        
-    ##  [12] Stewart Annex                               
-    ##  [13] Defense Distribution Region West Sharpe Site
-    ##  [14] Defense Distribution Region West Tracy      
-    ##  [15] Defense General Supply Center               
-    ##  [16] Pupukea Paalaa Uka Mil Road                 
-    ##  [17] Cornhusker AAP                              
-    ##  [18] Green River Test Complex                    
-    ##  [19] Badger AAP                                  
-    ##  [20] Fort Campbell                               
-    ##  [21] Fort Knox                                   
-    ##  [22] Fort Lee                                    
-    ##  [23] Fort Monmouth Main Post                     
-    ##  [24] Iowa AAP                                    
-    ##  [25] Letterkenny Army Depot                      
-    ##  [26] Riverbank AAP                               
-    ##  [27] Pueblo Chemical Depot                       
-    ##  [28] Rock Island Arsenal                         
-    ##  [29] Waianae-Kai Military Reservation            
-    ##  [30] Scranton AAP                                
-    ##  [31] Watervliet Arsenal                          
-    ##  [32] US Army Joint Sys Mfg Ctr Lima              
-    ##  [33] Fort Bliss AAA Ranges                       
-    ##  [34] Kilauea Military Reserve                    
-    ##  [35] Fort Benjamin Harrison                      
-    ##  [36] McAlester AAP                               
-    ##  [37] Fort Huachuca                               
-    ##  [38] Fort Leavenworth                            
-    ##  [39] Goldberg Stagefield                         
-    ##  [40] Hunt Stagefield                             
-    ##  [41] Fort Rucker                                 
-    ##  [42] Holston AAP                                 
-    ##  [43] Lake City AAP                               
-    ##  [44] Deseret Chemical Depot                      
-    ##  [45] Fort Riley                                  
-    ##  [46] Hawthorne Army Depot                        
-    ##  [47] Kipapa Ammo Storage Site                    
-    ##  [48] Makua Military Reserve                      
-    ##  [49] Helemano Military Reservation               
-    ##  [50] Military Ocean Terminal Concord             
-    ##  [51] Cairns Basefield                            
-    ##  [52] Allen Stagefield                            
-    ##  [53] Anniston Army Depot                         
-    ##  [54] Blossom Point Research Facility             
-    ##  [55] Brown Stagefield                            
-    ##  [56] Yuma Proving Ground                         
-    ##  [57] USA Field Station Kunia                     
-    ##  [58] Toth Stagefield                             
-    ##  [59] Stinson Stagefield                          
-    ##  [60] Skelly Stagefield                           
-    ##  [61] Sierra Army Depot                           
-    ##  [62] Shell Basefield                             
-    ##  [63] Schofield Bks Military Reservation          
-    ##  [64] Redstone Arsenal                            
-    ##  [65] Pohakuloa Training Area                     
-    ##  [66] Pine Bluff Arsenal                          
-    ##  [67] NTC and Fort Irwin                          
-    ##  [68] Defense Supply Center Columbus              
-    ##  [69] Blue Grass Army Depot                       
-    ##  [70] Fort Gordon                                 
-    ##  [71] Kahuku Training Area                        
-    ##  [72] Wheeler Army Airfield                       
-    ##  [73] Fort Gillem                                 
-    ##  [74] Presidio Of Monterey                        
-    ##  [75] Yakima Training Center                      
-    ##  [76] Umatilla Chem Depot                         
-    ##  [77] Dugway Proving Ground                       
-    ##  [78] Highbluff Stagefield                        
-    ##  [79] Fort Sill                                   
-    ##  [80] Fort Carson                                 
-    ##  [81] Fort Lewis                                  
-    ##  [82] Aberdeen Proving Ground                     
-    ##  [83] Fort Greely                                 
-    ##  [84] Picatinny Arsenal                           
-    ##  [85] Fort A P Hill                               
-    ##  [86] Camp Mackall                                
-    ##  [87] Fort Bragg                                  
-    ##  [88] Fort McPherson                              
-    ##  [89] Fort Detrick                                
-    ##  [90] Fort Belvoir                                
-    ##  [91] USA Adelphi Laboratory Ctr                  
-    ##  [92] West Point Mil Reservation                  
-    ##  [93] Fort Hamilton                               
-    ##  [94] Tooele Army Depot                           
-    ##  [95] Fort Lesley J McNair                        
-    ##  [96] Longhorn AAP                                
-    ##  [97] Red River Army Depot                        
-    ##  [98] Fort Myer                                   
-    ##  [99] Arlington National Cemetery                 
-    ## [100] White Sands Missile Range                   
-    ## [101] Fort Polk                                   
-    ## [102] Fort Jackson                                
-    ## [103] Fort Detrick Forest Glen Annex              
-    ## [104] Fort Leonard Wood                           
-    ## [105] Milan AAP                                   
-    ## [106] Fort De Russy                               
-    ## [107] Fort Shafter                                
-    ## [108] Kawaihae Military Reserve                   
-    ## [109] Tripler AMC                                 
-    ## [110] Aliamanu Military Reservation               
-    ## [111] Carlisle Barracks                           
-    ## [112] Fort Bliss                                  
-    ## [113] Fort George G Meade                         
-    ## [114] Fort Hood                                   
-    ## [115] US Army Soldier Systems Center Natick       
-    ## [116] Fort Drum                                   
-    ## [117] Fort Wainwright                             
-    ## [118] Fort Stewart                                
-    ## 750 Levels: 4th MARDIV Brooklyn ... Yuma Proving Ground
 
 Feature information
 -------------------
@@ -250,7 +99,8 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 ggplot() +
   geom_sf(data = world, fill = NA) +
   geom_sf(data = bases, color = "darkgreen", fill = "lightgreen") +
-  ggtitle("DoD Installations") +
+  coord_sf(xlim = c(-125, -67), ylim = c(25,53)) +
+  ggtitle("DoD Installations in NLDAS Coverage") +
   theme_bw()
 ```
 
@@ -260,75 +110,108 @@ Select specific installations
 -----------------------------
 
 ``` r
-army_select <-
-bases %>% 
-  filter(.$site_name %in% c("Fort Bragg", "Fort Benning GA", "Fort Benning", "Fort Campbell" ))
-
-ggplot(army_select) +
-  ggtitle("Bragg. Benning, Campbell") +
-  geom_sf() +
-  theme_bw()
+## Join Fort Benning Georgia and Alabama shapefiles (st_union)
+benning_geom <-
+  bases %>%
+    filter(stringr::str_detect(site_name, "Fort Benning")) %>% 
+    dplyr::select(geometry) %>% st_union() 
 ```
 
-![](bases_files/figure-markdown_github/select_bases-1.png)
+Select installations
+--------------------
+
+``` r
+## Create dataframe of active duty Army installations, including FSH (JBSA) and single Fort Benning row 
+
+army_bases <-
+  bases %>%
+    filter(oper_stat == "Active") %>% 
+    mutate(component = replace(component, site_name == "Fort Sam Houston", "Army Active")) %>%
+    filter(component == "Army Active") %>%
+    filter(site_name != "Fort Benning") %>%
+    mutate(geometry = replace(geometry, site_name == "Fort Benning GA", benning_geom ))
+   
+
+## Filter installations of interest
+
+army_select <-
+  army_bases %>% 
+    dplyr::filter(.$site_name %in% c("Fort Benning GA", "Fort Bragg","Fort Campbell",
+                              "Fort Jackson", "Fort Polk", "Fort Hood",
+                              "Fort Stewart", "Fort Leonard Wood", "Fort Riley",
+                              "NTC and Fort Irwin")) %>% 
+    mutate(centroid = st_centroid(geometry)) %>% 
+    dplyr::select(-c("component", "joint_base", "country", "oper_stat"))
+```
+
+    ## Warning in st_centroid.sfc(geometry): st_centroid does not give correct
+    ## centroids for longitude/latitude data
+
+``` r
+st_crs(army_select)
+```
+
+    ## Coordinate Reference System:
+    ##   EPSG: 4326 
+    ##   proj4string: "+proj=longlat +datum=WGS84 +no_defs"
+
+``` r
+as_tibble(army_select)
+```
+
+    ## # A tibble: 10 x 4
+    ##    site_name state_terr                  geometry                  centroid
+    ##    <fct>     <fct>                 <GEOMETRY [°]>               <POINT [°]>
+    ##  1 Fort Ben~ Georgia    POLYGON ((-84.8882 32.25~       (-84.81164 32.3917)
+    ##  2 Fort Cam~ Kentucky   MULTIPOLYGON (((-87.6513~       (-87.62461 36.6222)
+    ##  3 Fort Ril~ Kansas     MULTIPOLYGON (((-96.9351~      (-96.82482 39.20675)
+    ##  4 NTC and ~ California MULTIPOLYGON (((-116.389~      (-116.6333 35.37432)
+    ##  5 Fort Bra~ North Car~ MULTIPOLYGON (((-78.9619~      (-79.14397 35.13624)
+    ##  6 Fort Polk Louisiana  MULTIPOLYGON (((-93.1156~      (-93.12082 31.15788)
+    ##  7 Fort Jac~ South Car~ MULTIPOLYGON (((-80.8091~      (-80.82734 34.03994)
+    ##  8 Fort Leo~ Missouri   MULTIPOLYGON (((-92.0595~         (-92.1493 37.712)
+    ##  9 Fort Hood Texas      MULTIPOLYGON (((-97.7550~      (-97.74244 31.21746)
+    ## 10 Fort Ste~ Georgia    MULTIPOLYGON (((-81.7336~      (-81.61637 31.99366)
+
+Plot selected shapefiles
+------------------------
+
+``` r
+## Plot selected installations
+bases_plot <- purrr::map(army_select$site_name,
+           function(x) {
+             ggplot() +
+               geom_sf(data = filter(army_select, site_name == x)) +
+                ggtitle(x) +
+                theme_bw() +
+                theme(axis.text.x = element_text(size = rel(0.6)),
+                      axis.text.y = element_text(size = rel(0.6))) 
+           })
+
+cowplot::plot_grid(plotlist = bases_plot)
+```
+
+![](bases_files/figure-markdown_github/plot_selected_bases-1.png)
 
 ``` r
 bragg <-
-bases %>% 
-  filter(.$site_name == "Fort Bragg")
+  bases %>% 
+    filter(.$site_name == "Fort Bragg")
+
 
 # Save shapefile
 # st_write(bragg, "bragg.shp")
 
 st_centroid(bragg) %>% 
   as.tibble()
-```
 
-    ## Warning in st_centroid.sf(bragg): st_centroid assumes attributes are
-    ## constant over geometries of x
-
-    ## Warning in st_centroid.sfc(st_geometry(x), of_largest_polygon =
-    ## of_largest_polygon): st_centroid does not give correct centroids for
-    ## longitude/latitude data
-
-    ## Warning: `as.tibble()` is deprecated, use `as_tibble()` (but mind the new semantics).
-    ## This warning is displayed once per session.
-
-    ## # A tibble: 1 x 7
-    ##   component site_name joint_base state_terr country oper_stat
-    ##   <fct>     <fct>     <fct>      <fct>      <fct>   <fct>    
-    ## 1 Army Act~ Fort Bra~ N/A        North Car~ United~ Active   
-    ## # ... with 1 more variable: geometry <POINT [°]>
-
-``` r
 bragg_centroid <- st_centroid(bragg)
-```
 
-    ## Warning in st_centroid.sf(bragg): st_centroid assumes attributes are
-    ## constant over geometries of x
-
-    ## Warning in st_centroid.sfc(st_geometry(x), of_largest_polygon =
-    ## of_largest_polygon): st_centroid does not give correct centroids for
-    ## longitude/latitude data
-
-``` r
 ggplot(bragg) +
   ggtitle("Fort Bragg") +
   geom_sf() +
   theme_bw()
 ```
-
-![](bases_files/figure-markdown_github/select_bases-2.png)
-
-``` r
-ggplot(bases %>% 
-  filter(.$site_name %in% c("Fort Benning GA", "Fort Benning"))) +
-  ggtitle("Fort Benning") +
-  geom_sf() +
-  theme_bw()
-```
-
-![](bases_files/figure-markdown_github/select_bases-3.png)
 
 Load NLDAS grids
 ----------------
@@ -347,25 +230,6 @@ nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>%
     ## bbox:           xmin: -125 ymin: 25 xmax: -67 ymax: 53
     ## epsg (SRID):    4326
     ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
-
-``` r
-class(nldas_grid)
-```
-
-    ## [1] "sf"         "data.frame"
-
-``` r
-glimpse(nldas_grid)
-```
-
-    ## Observations: 103,936
-    ## Variables: 6
-    ## $ centerx  <dbl> -124.9375, -124.8125, -124.6875, -124.5625, -124.4375...
-    ## $ centery  <dbl> 25.0625, 25.0625, 25.0625, 25.0625, 25.0625, 25.0625,...
-    ## $ nldas_x  <int> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16...
-    ## $ nldas_y  <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
-    ## $ nldas_id <fct> x1y1, x2y1, x3y1, x4y1, x5y1, x6y1, x7y1, x8y1, x9y1,...
-    ## $ geometry <POLYGON [°]> POLYGON ((-124.875 25, -125..., POLYGON ((-12...
 
 ``` r
 st_crs(nldas_grid)
@@ -398,109 +262,25 @@ NLDAS and Installation Grid Overlap and Weighted Averages
 ---------------------------------------------------------
 
 ``` r
+class(bragg)
 bragg_nldas <-
   st_intersection(bragg, nldas_grid) %>% 
   mutate(area = sf::st_area(.),
          weight = area / sum(area))
-```
 
-    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
-
-    ## Warning: attribute variables are assumed to be spatially constant
-    ## throughout all geometries
-
-``` r
 bragg_intersects <-
   nldas_grid %>% filter(lengths(st_intersects(., bragg)) > 0)
-```
 
-    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
-
-``` r
 as.data.frame(bragg_intersects) %>% 
   select(-geometry)
-```
 
-    ##     centerx centery nldas_x nldas_y nldas_id
-    ## 1  -79.4375 35.0625     365      81  x365y81
-    ## 2  -79.3125 35.0625     366      81  x366y81
-    ## 3  -79.1875 35.0625     367      81  x367y81
-    ## 4  -79.0625 35.0625     368      81  x368y81
-    ## 5  -78.9375 35.0625     369      81  x369y81
-    ## 6  -79.3125 35.1875     366      82  x366y82
-    ## 7  -79.1875 35.1875     367      82  x367y82
-    ## 8  -79.0625 35.1875     368      82  x368y82
-    ## 9  -78.9375 35.1875     369      82  x369y82
-    ## 10 -79.0625 35.3125     368      83  x368y83
-    ## 11 -78.9375 35.3125     369      83  x369y83
-
-``` r
 bragg_nldas
-```
 
-    ## Simple feature collection with 11 features and 13 fields
-    ## geometry type:  GEOMETRY
-    ## dimension:      XY
-    ## bbox:           xmin: -79.38063 ymin: 35.03946 xmax: -78.90188 ymax: 35.27456
-    ## epsg (SRID):    4326
-    ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
-    ## First 10 features:
-    ##      component  site_name joint_base     state_terr       country
-    ## 1  Army Active Fort Bragg        N/A North Carolina United States
-    ## 2  Army Active Fort Bragg        N/A North Carolina United States
-    ## 3  Army Active Fort Bragg        N/A North Carolina United States
-    ## 4  Army Active Fort Bragg        N/A North Carolina United States
-    ## 5  Army Active Fort Bragg        N/A North Carolina United States
-    ## 6  Army Active Fort Bragg        N/A North Carolina United States
-    ## 7  Army Active Fort Bragg        N/A North Carolina United States
-    ## 8  Army Active Fort Bragg        N/A North Carolina United States
-    ## 9  Army Active Fort Bragg        N/A North Carolina United States
-    ## 10 Army Active Fort Bragg        N/A North Carolina United States
-    ##    oper_stat  centerx centery nldas_x nldas_y nldas_id
-    ## 1     Active -79.4375 35.0625     365      81  x365y81
-    ## 2     Active -79.3125 35.0625     366      81  x366y81
-    ## 3     Active -79.1875 35.0625     367      81  x367y81
-    ## 4     Active -79.0625 35.0625     368      81  x368y81
-    ## 5     Active -78.9375 35.0625     369      81  x369y81
-    ## 6     Active -79.3125 35.1875     366      82  x366y82
-    ## 7     Active -79.1875 35.1875     367      82  x367y82
-    ## 8     Active -79.0625 35.1875     368      82  x368y82
-    ## 9     Active -78.9375 35.1875     369      82  x369y82
-    ## 10    Active -79.0625 35.3125     368      83  x368y83
-    ##                          geometry              area           weight
-    ## 1  POLYGON ((-79.375 35.11408,...    267870.6 [m^2] 0.0004273396 [1]
-    ## 2  POLYGON ((-79.25 35.0421, -...  85682501.6 [m^2] 0.1366911038 [1]
-    ## 3  POLYGON ((-79.125 35.04959,... 103830342.2 [m^2] 0.1656427369 [1]
-    ## 4  POLYGON ((-79 35.10627, -79...  71718332.8 [m^2] 0.1144137705 [1]
-    ## 5  MULTIPOLYGON (((-78.92337 3...   8288123.1 [m^2] 0.0132222178 [1]
-    ## 6  POLYGON ((-79.37345 35.125,...  58628497.8 [m^2] 0.0935312803 [1]
-    ## 7  POLYGON ((-79.25 35.20718, ...  85822173.7 [m^2] 0.1369139255 [1]
-    ## 8  MULTIPOLYGON (((-79.00621 3... 141136566.4 [m^2] 0.2251581440 [1]
-    ## 9  MULTIPOLYGON (((-78.96197 3...  61218699.6 [m^2] 0.0976634839 [1]
-    ## 10 MULTIPOLYGON (((-79.07842 3...   5968542.1 [m^2] 0.0095217413 [1]
-
-``` r
 sum(bragg_nldas$area)
-```
-
-    ## 626833051 [m^2]
-
-``` r
 sum(bragg_nldas$weight)
-```
-
-    ## 1 [1]
-
-``` r
 st_area(bragg_nldas) 
-```
 
-    ## Units: [m^2]
-    ##  [1]    267870.6  85682501.6 103830342.2  71718332.8   8288123.1
-    ##  [6]  58628497.8  85822173.7 141136566.4  61218699.6   5968542.1
-    ## [11]   4271401.2
 
-``` r
 ggplot(bragg_nldas) + 
   ggtitle("Fort Bragg NLDAS grids") +
   geom_sf() +
@@ -509,7 +289,102 @@ ggplot(bragg_nldas) +
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/nldas_intersection-1.png)
+``` r
+# Identify all NLDAS grids intersected by installation shapefiles
+
+bases_nldas = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_nldas = st_intersection(base, nldas_grid) 
+  bases_nldas = rbind(bases_nldas, base_nldas)
+}
+```
+
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersection assumes that they are planar
+
+``` r
+rm(base, base_nldas)
+bases_nldas
+```
+
+    ## Simple feature collection with 135 features and 7 fields
+    ## Active geometry column: geometry
+    ## geometry type:  GEOMETRY
+    ## dimension:      XY
+    ## bbox:           xmin: -117.0831 ymin: 30.92187 xmax: -78.90188 ymax: 39.30681
+    ## epsg (SRID):    4326
+    ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
+    ## First 10 features:
+    ##           site_name state_terr  centerx centery nldas_x nldas_y nldas_id
+    ## 1   Fort Benning GA    Georgia -84.9375 32.1875     321      58  x321y58
+    ## 1.1 Fort Benning GA    Georgia -84.8125 32.1875     322      58  x322y58
+    ## 1.2 Fort Benning GA    Georgia -85.0625 32.3125     320      59  x320y59
+    ## 1.3 Fort Benning GA    Georgia -84.9375 32.3125     321      59  x321y59
+    ## 1.4 Fort Benning GA    Georgia -84.8125 32.3125     322      59  x322y59
+    ## 1.5 Fort Benning GA    Georgia -84.6875 32.3125     323      59  x323y59
+    ## 1.6 Fort Benning GA    Georgia -84.9375 32.4375     321      60  x321y60
+    ## 1.7 Fort Benning GA    Georgia -84.8125 32.4375     322      60  x322y60
+    ## 1.8 Fort Benning GA    Georgia -84.6875 32.4375     323      60  x323y60
+    ## 1.9 Fort Benning GA    Georgia -84.8125 32.5625     322      61  x322y61
+    ##                      centroid                       geometry
+    ## 1   POINT (-84.81164 32.3917) MULTIPOLYGON (((-84.90602 3...
+    ## 1.1 POINT (-84.81164 32.3917) POLYGON ((-84.81997 32.25, ...
+    ## 1.2 POINT (-84.81164 32.3917) POLYGON ((-85 32.29875, -85...
+    ## 1.3 POINT (-84.81164 32.3917) POLYGON ((-84.8882 32.25929...
+    ## 1.4 POINT (-84.81164 32.3917) POLYGON ((-84.75 32.33047, ...
+    ## 1.5 POINT (-84.81164 32.3917) POLYGON ((-84.65872 32.375,...
+    ## 1.6 POINT (-84.81164 32.3917) MULTIPOLYGON (((-84.97334 3...
+    ## 1.7 POINT (-84.81164 32.3917) POLYGON ((-84.875 32.45522,...
+    ## 1.8 POINT (-84.81164 32.3917) POLYGON ((-84.63749 32.5, -...
+    ## 1.9 POINT (-84.81164 32.3917) POLYGON ((-84.84992 32.5, -...
+
+``` r
+# Calculate area of installation in each NLDAS grid and weight for spatial weighted average
+nldas_weights <- bases_nldas %>% 
+    mutate(area = sf::st_area(.$geometry)) %>% 
+  group_by(site_name) %>% 
+    mutate(sum_area = sum(area),
+           weight = (area / sum_area)) 
+
+
+
+# NLDAS grids that intersect with bases (to map full grid squares)
+intersects = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_intersect = nldas_grid %>% filter(lengths(st_intersects(., base)) > 0)
+  intersects = rbind(intersects, base_intersect)
+}
+```
+
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+    ## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+
+``` r
+rm(base, base_intersect)
+
+# Join `site_name` to selected NLDAS grid geometries
+
+intersects <- intersects %>% left_join(select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
+```
 
 Bounding box for installation
 -----------------------------
@@ -517,22 +392,55 @@ Bounding box for installation
 ``` r
 st_bbox(bragg) %>% 
   .[c("ymin", "xmin", "ymax", "xmax")]
-```
 
-    ##      ymin      xmin      ymax      xmax 
-    ##  35.03946 -79.38063  35.27456 -78.90188
-
-``` r
 bb_bragg <- st_as_sfc(st_bbox(bragg))
 class(bb_bragg)
 ```
 
-    ## [1] "sfc_POLYGON" "sfc"
+``` r
+bbox = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_bbox = st_bbox(base)
+  bbox = rbind(bbox, base_bbox)
+}
+rm(base, base_bbox)
 
-Plots of intersecting NLDAS grids
+
+bbox <-
+  as_tibble(army_select[,1]) %>% 
+    bind_cols(as_tibble(bbox))
+
+bbox %>% 
+  select(-geometry) %>% 
+  print()
+```
+
+    ## # A tibble: 10 x 5
+    ##    site_name            xmin  ymin   xmax  ymax
+    ##    <fct>               <dbl> <dbl>  <dbl> <dbl>
+    ##  1 Fort Benning GA     -85.0  32.2  -84.6  32.6
+    ##  2 Fort Campbell       -87.8  36.5  -87.4  36.7
+    ##  3 Fort Riley          -97.0  39.0  -96.7  39.3
+    ##  4 NTC and Fort Irwin -117.   35.1 -116.   35.6
+    ##  5 Fort Bragg          -79.4  35.0  -78.9  35.3
+    ##  6 Fort Polk           -93.6  30.9  -92.9  31.5
+    ##  7 Fort Jackson        -81.0  34.0  -80.7  34.1
+    ##  8 Fort Leonard Wood   -92.3  37.6  -91.9  38.0
+    ##  9 Fort Hood           -97.9  31.0  -97.5  31.4
+    ## 10 Fort Stewart        -81.9  31.8  -81.3  32.1
 
 ``` r
-ggplot() +
+army_select <- bbox %>% 
+  select(-geometry) %>%
+  right_join(army_select, by = "site_name")
+```
+
+Plots of intersecting NLDAS grids
+---------------------------------
+
+``` r
+ggplot() + 
   geom_sf(data = bragg_nldas) +
   geom_sf(data = bb_bragg , color = "blue", fill = "NA") +
   geom_sf(data = bragg_centroid, color = "red") +
@@ -540,11 +448,8 @@ ggplot() +
   geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
   geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
   theme_bw()
-```
 
-![](bases_files/figure-markdown_github/grid_plots-1.png)
 
-``` r
 ggplot() +
   geom_sf(data = bragg_intersects) +
   geom_sf(data = bb_bragg , color = "blue", fill = "NA") +
@@ -556,4 +461,15 @@ ggplot() +
   theme_bw()
 ```
 
-![](bases_files/figure-markdown_github/grid_plots-2.png)
+``` r
+tm_shape(intersects) +
+  tm_borders() +
+  tm_text("nldas_id", size = 0.5) +
+  tm_shape(nldas_weights) +
+  tm_borders() +
+  tm_graticules(col = "gray90", alpha = 0.5, labels.size = 0.5) +
+  tm_facets(by = "site_name") +
+  tm_layout(panel.label.size = 0.8, panel.label.height = 0.8)
+```
+
+![](bases_files/figure-markdown_github/grid_plots-1.png)
