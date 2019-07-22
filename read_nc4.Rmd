@@ -54,6 +54,12 @@ for (i in 1:11) {
 }
 long_names
 
+
+# Close the connection to the nc file
+nc_close(nc1)
+```
+
+```{r create_varlist, eval = FALSE, include = FALSE}
 short_names <- c("evap", "longwave", "shortwave", "cape", "con_frac", "precip", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")
 
 variables <- as_tibble(cbind(var_names, long_names, short_names))
@@ -62,10 +68,9 @@ var_list <- list(
   var_row = 1:nrow(variables),          
   var_name = variables$short_names
 )
-
-# Close the connection to the nc file
-nc_close(nc1)
 ```
+
+
 
 ```{r process_single_ncdf, eval = FALSE, include = FALSE}
 
