@@ -15,4 +15,4 @@
 
 - function to filter by bounding box, extract variables by ncdf "grid"/dimension, join variables, extract date/time from file name
 - map function over each ncdf file (apply in parallel, multiprocess plan)
-- output: 
+- output: dataframe with columns for grid coordinates (center lat/lon), variable value (tmp, spfh, ugrd, vgrd, pres, dswrf), date/time
