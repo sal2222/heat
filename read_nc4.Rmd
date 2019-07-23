@@ -33,6 +33,72 @@ library(wbgt)  #devtools::install_github("mdljts/wbgt")
 
 ```
 
+```{r preliminary, echo = FALSE, include = FALSE}
+## Preliminary (from `bases.Rmd`)
+
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+benning_geom <-
+  bases %>%
+    filter(stringr::str_detect(site_name, "Fort Benning")) %>% 
+    dplyr::select(geometry) %>% st_union() 
+
+## Create dataframe of active duty Army installations, including FSH (JBSA) and single Fort Benning row 
+army_bases <-
+  bases %>%
+    filter(oper_stat == "Active") %>% 
+    mutate(component = replace(component, site_name == "Fort Sam Houston", "Army Active")) %>%
+    filter(component == "Army Active") %>%
+    filter(site_name != "Fort Benning") %>%
+    mutate(geometry = replace(geometry, site_name == "Fort Benning GA", benning_geom ))
+   
+## Filter installations of interest
+army_select <-
+  army_bases %>% 
+    dplyr::filter(.$site_name %in% c("Fort Benning GA", "Fort Bragg","Fort Campbell",
+                              "Fort Jackson", "Fort Polk", "Fort Hood",
+                              "Fort Stewart", "Fort Leonard Wood", "Fort Riley",
+                              "NTC and Fort Irwin")) %>% 
+    mutate(centroid = st_centroid(geometry)) %>% 
+    dplyr::select(-c("component", "joint_base", "country", "oper_stat"))
+
+
+nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
+  janitor::clean_names()
+
+# Identify all NLDAS grids intersected by installation shapefiles
+bases_nldas = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_nldas = st_intersection(base, nldas_grid) 
+  bases_nldas = rbind(bases_nldas, base_nldas)
+}
+rm(base, base_nldas)
+
+# Calculate area of installation in each NLDAS grid and weight for spatial weighted average
+nldas_weights <- bases_nldas %>% 
+    mutate(area = sf::st_area(.$geometry)) %>% 
+  group_by(site_name) %>% 
+    mutate(sum_area = sum(area),
+           weight = (area / sum_area)) %>% 
+    dplyr::select(-c(nldas_x, nldas_y, area, centroid, sum_area))
+
+# NLDAS grids that intersect with bases (to map full grid squares)
+intersects = NULL
+for (i in 1:nrow(army_select)) {
+  base = army_select[i,] 
+  base_intersect = nldas_grid %>% filter(lengths(st_intersects(., base)) > 0)
+  intersects = rbind(intersects, base_intersect)
+}
+rm(base, base_intersect)
+
+# Join `site_name` to selected NLDAS grid geometries
+intersects <- intersects %>% left_join(dplyr::select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
+
+```
+
+
 
 ## Open 1st NetCDF file to inspect variable names
 ```{r extract_variable_names}
@@ -167,12 +233,12 @@ read_nc4 <- function(input_file) {
     left_join(., c, by = c("lat", "lon")) %>% 
     mutate(date_time = 
            file_name %>% 
-                stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>% 
-                  flipTime::AsDateTime(.)) %>% 
+                stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>%
+                stringr::str_replace("(\\d{4})(\\d{2})(\\d{2})(\\.)(\\d{2})(\\d{2})$", "\\1-\\2-\\3 \\5:\\6\\:00") %>% 
+                  flipTime::AsDateTime(us.format = TRUE, time.zone = "UTC")) %>% 
     janitor::clean_names() 
 
 }
-
 
 ```
 
@@ -183,19 +249,38 @@ read_nc4 <- function(input_file) {
 plan(multiprocess)
 
 ptm <- proc.time()
-df_out <- furrr::future_map_dfr(file_list, read_nc4, .progress = TRUE) 
+nldas_df <- furrr::future_map_dfr(file_list, read_nc4, .progress = TRUE) 
 proc.time() - ptm
 
-df_out
+nldas_df
 
+```
+
+
+## Join NLDAS grid ID and weight to dataframe
+
+Fuzzy join used due to rounding differences at the fourth decimal place between NLDAS grid file centers and NetCDF download coordinates (all distances less than 0.00051 degrees). 
+
+```{r join_gridid_weight}
+
+nldas_df_weighted <-
+  nldas_df %>%
+    fuzzyjoin::difference_left_join(nldas_weights, by = c("lon" = "centerx", "lat" = "centery"), max_dist = 0.001, distance_col = "distance") %>% 
+    dplyr::select(-c(centerx, centery, lat.distance, lon.distance)) %>%
+    filter(!is.na(nldas_id)) 
+
+nldas_df_weighted
 ```
 
 
 
 
 
-## Date/Time and WBGT code
 ```{r date_time, include = FALSE, eval = FALSE}
+
+
+## Date/Time and WBGT code
+
 time = as.POSIXct((strptime(paste(day, month, year, hour, sep = " "), "%d %m %Y %H%M"))))
 
 mutate(date_time = 

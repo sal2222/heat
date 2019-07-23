@@ -78,8 +78,9 @@ read_nc4 <- function(input_file) {
     left_join(., c, by = c("lat", "lon")) %>% 
     mutate(date_time = 
            file_name %>% 
-                stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>% 
-                  flipTime::AsDateTime(.)) %>% 
+                stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>%
+                stringr::str_replace("(\\d{4})(\\d{2})(\\d{2})(\\.)(\\d{2})(\\d{2})$", "\\1-\\2-\\3 \\5:\\6\\:00") %>% 
+                  flipTime::AsDateTime(us.format = TRUE, time.zone = "UTC")) %>% 
     janitor::clean_names() 
 
 }
@@ -92,11 +93,10 @@ Map over function with each ncdf4 file
 plan(multiprocess)
 
 ptm <- proc.time()
-df_out <- furrr::future_map_dfr(file_list, read_nc4, .progress = TRUE) 
+nldas_df <- furrr::future_map_dfr(file_list, read_nc4, .progress = TRUE) 
 ```
 
     ## 
-     Progress: ----------------------------------------------------------------------------------------------- 100%
      Progress: ----------------------------------------------------------------------------------------------- 100%
 
 ``` r
@@ -104,10 +104,10 @@ proc.time() - ptm
 ```
 
     ##    user  system elapsed 
-    ##    0.09    0.00    1.97
+    ##    0.09    0.00    1.89
 
 ``` r
-df_out
+nldas_df
 ```
 
     ## # A tibble: 24 x 9
@@ -124,6 +124,38 @@ df_out
     ##  9 -79.3  35.1  286. 0.00541 0.300 -0.540 100754.     0 2000-01-01 00:00:00
     ## 10 -79.2  35.1  285. 0.00547 0.280 -0.600 100881.     0 2000-01-01 00:00:00
     ## # ... with 14 more rows
+
+Join NLDAS grid ID and weight to dataframe
+------------------------------------------
+
+Fuzzy join used due to rounding differences at the fourth decimal place between NLDAS grid file centers and NetCDF download coordinates (all distances less than 0.00051 degrees).
+
+``` r
+nldas_df_weighted <-
+  nldas_df %>%
+    fuzzyjoin::difference_left_join(nldas_weights, by = c("lon" = "centerx", "lat" = "centery"), max_dist = 0.001, distance_col = "distance") %>% 
+    dplyr::select(-c(centerx, centery, lat.distance, lon.distance)) %>%
+    filter(!is.na(nldas_id)) 
+
+nldas_df_weighted
+```
+
+    ## # A tibble: 24 x 14
+    ##      lon   lat   tmp    spfh  ugrd   vgrd   pres dswrf date_time          
+    ##    <dbl> <dbl> <dbl>   <dbl> <dbl>  <dbl>  <dbl> <dbl> <dttm>             
+    ##  1 -79.3  35.1  286. 0.00545 0.950 -0.800 1.01e5     0 2000-01-01 00:00:00
+    ##  2 -79.2  35.1  286. 0.00553 0.910 -0.860 1.01e5     0 2000-01-01 00:00:00
+    ##  3 -79.1  35.1  286. 0.00563 0.870 -0.800 1.01e5     0 2000-01-01 00:00:00
+    ##  4 -78.9  35.1  285. 0.00573 0.830 -0.75  1.01e5     0 2000-01-01 00:00:00
+    ##  5 -79.3  35.2  286. 0.00525 0.890 -0.810 1.01e5     0 2000-01-01 00:00:00
+    ##  6 -79.2  35.2  286. 0.00528 0.920 -0.890 1.01e5     0 2000-01-01 00:00:00
+    ##  7 -79.1  35.2  286. 0.00535 0.890 -0.850 1.01e5     0 2000-01-01 00:00:00
+    ##  8 -78.9  35.2  285. 0.00545 0.860 -0.820 1.01e5     0 2000-01-01 00:00:00
+    ##  9 -79.3  35.1  286. 0.00541 0.300 -0.540 1.01e5     0 2000-01-01 00:00:00
+    ## 10 -79.2  35.1  285. 0.00547 0.280 -0.600 1.01e5     0 2000-01-01 00:00:00
+    ## # ... with 14 more rows, and 5 more variables: site_name <fct>,
+    ## #   state_terr <fct>, nldas_id <fct>, weight <dbl>, geometry <GEOMETRY
+    ## #   [°]>
 
 Date/Time and WBGT code
 -----------------------

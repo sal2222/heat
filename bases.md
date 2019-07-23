@@ -256,7 +256,8 @@ nldas_weights <- bases_nldas %>%
     mutate(area = sf::st_area(.$geometry)) %>% 
   group_by(site_name) %>% 
     mutate(sum_area = sum(area),
-           weight = (area / sum_area)) 
+           weight = (area / sum_area)) %>% 
+    dplyr::select(-c(nldas_x, nldas_y, area, centroid, sum_area))
 
 
 
@@ -271,7 +272,7 @@ rm(base, base_intersect)
 
 # Join `site_name` to selected NLDAS grid geometries
 
-intersects <- intersects %>% left_join(select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
+intersects <- intersects %>% left_join(dplyr::select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
 ```
 
 Bounding box for installation
@@ -293,14 +294,28 @@ for (i in 1:nrow(army_select)) {
   bbox = rbind(bbox, base_bbox)
 }
 rm(base, base_bbox)
+bbox
+```
 
+    ##                 xmin     ymin       xmax     ymax
+    ## base_bbox  -85.02139 32.23873  -84.63713 32.55174
+    ## base_bbox  -87.82091 36.53555  -87.42340 36.72682
+    ## base_bbox  -96.96496 38.96984  -96.68176 39.30681
+    ## base_bbox -117.08312 35.08250 -116.16267 35.62738
+    ## base_bbox  -79.38063 35.03946  -78.90188 35.27456
+    ## base_bbox  -93.58000 30.92187  -92.86275 31.49050
+    ## base_bbox  -80.96436 33.97841  -80.70406 34.10511
+    ## base_bbox  -92.26339 37.59774  -91.94754 37.96824
+    ## base_bbox  -97.91302 31.01045  -97.50611 31.39280
+    ## base_bbox  -81.88933 31.77459  -81.30432 32.12496
 
-bbox <-
+``` r
+bbox_join <-
   as_tibble(army_select[,1]) %>% 
     bind_cols(as_tibble(bbox))
 
-bbox %>% 
-  select(-geometry) %>% 
+bbox_join %>% 
+  dplyr::select(-geometry) %>% 
   print()
 ```
 
@@ -319,8 +334,8 @@ bbox %>%
     ## 10 Fort Stewart        -81.9  31.8  -81.3  32.1
 
 ``` r
-army_select <- bbox %>% 
-  select(-geometry) %>%
+army_select <- bbox_join %>% 
+  dplyr::select(-geometry) %>%
   right_join(army_select, by = "site_name")
 ```
 
@@ -373,12 +388,12 @@ tm_shape(intersects) +
 #    tm_layout(title = "Fort Polk")
 
  
-# Individual site maps 
+# Individual site maps (tmap) 
 
 site_list <- unique(as.character(army_select$site_name))
 
 for (i in seq_along(site_list)) { 
-site_plot <-
+site_plot_tmap <-
   tm_shape(intersects %>%  filter(site_name == site_list[i])) +
   tm_borders() +
   tm_text("nldas_id", size = 0.7) +
@@ -387,8 +402,31 @@ site_plot <-
   tm_fill(col = "darkolivegreen4", alpha = 0.2) +
   tm_graticules(col = "gray90", alpha = 0.3, labels.size = 0.8) +
     tm_layout(title = site_list[i])
-print(site_plot)
+print(site_plot_tmap)
 }
 ```
 
 ![](bases_files/figure-markdown_github/grid_plots-2.png)![](bases_files/figure-markdown_github/grid_plots-3.png)![](bases_files/figure-markdown_github/grid_plots-4.png)![](bases_files/figure-markdown_github/grid_plots-5.png)![](bases_files/figure-markdown_github/grid_plots-6.png)![](bases_files/figure-markdown_github/grid_plots-7.png)![](bases_files/figure-markdown_github/grid_plots-8.png)![](bases_files/figure-markdown_github/grid_plots-9.png)![](bases_files/figure-markdown_github/grid_plots-10.png)![](bases_files/figure-markdown_github/grid_plots-11.png)
+
+``` r
+# Individual site maps (ggplot) 
+
+for (i in seq_along(site_list)) { 
+site_plot_gg <-
+
+ggplot() +
+  geom_sf(data = intersects %>% filter(site_name == site_list[i])) +
+  geom_rect(data = army_select %>% filter(site_name == site_list[i]), 
+            aes(xmin = xmin , xmax = xmax, ymin = ymin, ymax = ymax), color = "blue", fill = "transparent") +
+  ggtitle(site_list[i]) +
+  geom_sf(data = nldas_weights %>% filter(site_name == site_list[i]), fill = "NA") +
+  geom_label(data = nldas_weights %>% filter(site_name == site_list[i]), aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = nldas_weights %>% filter(site_name == site_list[i]), aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.03)) +
+  theme_bw() +
+  theme(axis.title = element_text())
+
+print(site_plot_gg)
+}
+```
+
+![](bases_files/figure-markdown_github/grid_plots-12.png)![](bases_files/figure-markdown_github/grid_plots-13.png)![](bases_files/figure-markdown_github/grid_plots-14.png)![](bases_files/figure-markdown_github/grid_plots-15.png)![](bases_files/figure-markdown_github/grid_plots-16.png)![](bases_files/figure-markdown_github/grid_plots-17.png)![](bases_files/figure-markdown_github/grid_plots-18.png)![](bases_files/figure-markdown_github/grid_plots-19.png)![](bases_files/figure-markdown_github/grid_plots-20.png)![](bases_files/figure-markdown_github/grid_plots-21.png)

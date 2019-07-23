@@ -206,7 +206,8 @@ nldas_weights <- bases_nldas %>%
     mutate(area = sf::st_area(.$geometry)) %>% 
   group_by(site_name) %>% 
     mutate(sum_area = sum(area),
-           weight = (area / sum_area)) 
+           weight = (area / sum_area)) %>% 
+    dplyr::select(-c(nldas_x, nldas_y, area, centroid, sum_area))
 
 
 
@@ -221,7 +222,7 @@ rm(base, base_intersect)
 
 # Join `site_name` to selected NLDAS grid geometries
 
-intersects <- intersects %>% left_join(select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
+intersects <- intersects %>% left_join(dplyr::select(as_tibble(nldas_weights), c(nldas_id, site_name)), by = "nldas_id")
   
 ```
 
@@ -247,22 +248,22 @@ for (i in 1:nrow(army_select)) {
   bbox = rbind(bbox, base_bbox)
 }
 rm(base, base_bbox)
+bbox
 
-
-bbox <-
+bbox_join <-
   as_tibble(army_select[,1]) %>% 
     bind_cols(as_tibble(bbox))
 
-bbox %>% 
-  select(-geometry) %>% 
+bbox_join %>% 
+  dplyr::select(-geometry) %>% 
   print()
 
-army_select <- bbox %>% 
-  select(-geometry) %>%
+army_select <- bbox_join %>% 
+  dplyr::select(-geometry) %>%
   right_join(army_select, by = "site_name")
 
-    
-  
+
+
 ```
 
 
@@ -312,12 +313,12 @@ tm_shape(intersects) +
 #    tm_layout(title = "Fort Polk")
 
  
-# Individual site maps 
+# Individual site maps (tmap) 
 
 site_list <- unique(as.character(army_select$site_name))
 
 for (i in seq_along(site_list)) { 
-site_plot <-
+site_plot_tmap <-
   tm_shape(intersects %>%  filter(site_name == site_list[i])) +
   tm_borders() +
   tm_text("nldas_id", size = 0.7) +
@@ -326,12 +327,28 @@ site_plot <-
   tm_fill(col = "darkolivegreen4", alpha = 0.2) +
   tm_graticules(col = "gray90", alpha = 0.3, labels.size = 0.8) +
     tm_layout(title = site_list[i])
-print(site_plot)
+print(site_plot_tmap)
 }
 
 
 
+# Individual site maps (ggplot) 
 
+for (i in seq_along(site_list)) { 
+site_plot_gg <-
 
+ggplot() +
+  geom_sf(data = intersects %>% filter(site_name == site_list[i])) +
+  geom_rect(data = army_select %>% filter(site_name == site_list[i]), 
+            aes(xmin = xmin , xmax = xmax, ymin = ymin, ymax = ymax), color = "blue", fill = "transparent") +
+  ggtitle(site_list[i]) +
+  geom_sf(data = nldas_weights %>% filter(site_name == site_list[i]), fill = "NA") +
+  geom_label(data = nldas_weights %>% filter(site_name == site_list[i]), aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_text(data = nldas_weights %>% filter(site_name == site_list[i]), aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.03)) +
+  theme_bw() +
+  theme(axis.title = element_text())
+
+print(site_plot_gg)
+}
 
 ```
