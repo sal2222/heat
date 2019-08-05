@@ -2,7 +2,7 @@
 title: "nldas_wget"
 author: "SL"
 date: "August 5, 2019"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -100,11 +100,13 @@ missing_urls <- right_join(full_file_df, missing_nldas, by = "file_name") %>%
 
 ## Write .txt file of missing URLs
 
-write_lines(missing_urls[["value"]], "C:/Users/slewa/Documents/data/heat/missing_urls.txt", na = "NA", append = FALSE)
+#write_lines(missing_urls[["value"]], "C:/Users/slewa/Documents/data/heat/missing_urls.txt", na = "NA", append = FALSE)
 
+write_lines(missing_urls[["value"]], "D:/nldas_urls/missing_urls.txt", na = "NA", append = FALSE)
 
 
 
 
 ```
 
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i D:\nldas_urls\missing_urls.txt -P D:\nldas
