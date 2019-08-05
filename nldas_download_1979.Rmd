@@ -1,0 +1,315 @@
+---
+title: "nldas_download"
+author: "SL"
+date: "July 2, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+# library(installr)
+# installr::system.PATH()
+devtools::install_github("Displayr/flipTime")
+
+library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
+library(lubridate)
+library(flipTime)
+library(fuzzyjoin)
+```
+
+## NLDAS Data Source
+Earthdata.nasa.gov
+Collection: 
+NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H) at GES DISC
+Homepage: https://ldas.gsfc.nasa.gov/nldas/
+Metadata: https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt
+
+## Distribution URLs
+- Simple Subset Wizard (SSW): https://disc.gsfc.nasa.gov/SSW/#keywords=NLDAS_FORA0125_H
+(Date range, bounding box, select variables)
+
+##SSW Steps
+
+1. Collection Launch page: https://disc.gsfc.nasa.gov/datasets/NLDAS_FORA0125_H_002/summary
+2. Data Access -> Simple Subset Wizard
+3. Enter Date Range and Spatial Bounding Box coordinates 
+  (S, W, N, E  -->  ymin, xmin, ymax, xmax)
+4. Click "Search for data sets"" box
+5. Select variables from dropdown (all 11); choice of "GRIB" or "netCDF" -> netCDF
+6. Click "subset selected data sets"
+7. Click "View selected data sets"
+
+## File download steps
+
+(For small downloads -- browser download manager)
+Download Manager: https://chrome.google.com/webstore/detail/chrono-download-manager
+  - Chrono Sniffer -> Application -> select links (120 in 5-day week test)
+  - select all
+  - click "download all" 
+  - about 6 minutes for 120 files
+
+(For thousands of files -- wget)
+wget:
+  - save URL's in txt file
+  - run in command prompt (Windows 10)
+  - install wget, recent version (installed using chocolately, `choco install wget`, https://chocolatey.org/packages/Wget/1.20.3.20190531) - run in PowerShell
+
+Command
+  
+`wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --
+content-disposition -i C:\Users\slewa\Documents\data\heat\bragg_1979_urls.txt -P C:\Users\slewa\Documents\data\heat\bragg_1979`
+
+
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i C:\Users\slewa\Documents\data\heat\2000s_urls.txt -P E:\nldas
+
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i C:\Users\slewa\Documents\data\heat\2000s_urls.txt -P E:\nldas
+
+
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i D:\nldas_urls\nldas_urls2.txt -P D:\nldas
+
+
+
+## Create list of files in R  
+```{r bragg_test_nldas}
+
+# https://www.r-bloggers.com/a-netcdf-4-in-r-cheatsheet/
+# Retrieve a list of nc files in data folder:
+file_list <- list.files(path = "C:/Users/slewa/Documents/data/heat/bragg_1979", pattern = "^.*\\.(nc|NC|Nc|Nc)$")
+file_list %>% head()
+
+```
+
+## NetCDF format: Inspect first ncdf file
+```{r inspect_first, eval=FALSE}
+
+# Open a connection to the first file in  list
+nc1 <- ncdf4::nc_open(paste0("C:/Users/slewa/Documents/data/heat/bragg_1979/", file_list[1]))
+# print(nc1)
+
+# Get a list of the NetCDF's R attributes:
+attributes(nc1)$names
+
+print(paste("The file has",nc1$nvars,"variables,",nc1$ndims,"dimensions and",nc1$natts,"NetCDF attributes"))
+
+# Get a list of the nc variable names.
+attributes(nc1$var)$names
+
+# View temperature variable's nc attributes
+ncdf4::ncatt_get(nc1, attributes(nc1$var)$names[10])
+
+# Retrieve a matrix of the data using the ncvar_get function
+temperature <- ncvar_get(nc1, attributes(nc1$var)$names[10])
+
+# Print the data's dimensions
+dim(temp)
+
+# Retrieve the latitude and longitude dimensions
+attributes(nc1$dim)$names
+
+nc1_lat <- ncvar_get(nc1, attributes(nc1$dim)$names[1])
+nc1_lon <- ncvar_get(nc1, attributes(nc1$dim)$names[2])
+
+print(paste(dim(nc1_lat), "latitudes and", dim(nc1_lon), "longitudes"))
+
+```
+
+## Variable names
+```{r variable_names}
+var_names <- attributes(nc1$var)$names
+
+long_names <- vector("character", length = 11)
+  
+for (i in 1:11) {
+   long_names[[i]] <- ncatt_get(nc1, attributes(nc1$var)$names[[i]])$long_name
+}
+long_names
+
+short_names <- c("evap", "longwave", "shortwave", "cape", "con_frac", "precip", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")
+
+variables <- as_tibble(cbind(var_names, long_names, short_names))
+variables
+
+var_list <- list(
+  var_row = 1:nrow(variables),          
+  var_name = variables$short_names
+)
+
+```
+
+
+## Initial time for each variable 
+Potential evaporation, Convective Available Potential Energy, and fraction of precipitation convective set one hour earlier.
+```{r}
+
+for (i in 1:11) {
+   print(ncatt_get(nc1, attributes(nc1$var)$names[i])$initial_time)
+}
+
+```
+
+## NetCDF Metadata
+
+ncdump::Net CDF command
+```{r ncdf_metadata, eval = FALSE}
+ncdump::NetCDF(paste0("nldas_data/bragg_test/", file_list[1]))
+```
+
+Print list function
+```{r print_list, eval = FALSE}
+
+print_list <- function(list) {
+  for (item in 1:length(list)) {
+    print(head(list[[item]]))
+  }
+}
+print_list(nc1)
+```
+
+## Example variable matrix by lat/long
+```{r examine_matrix, eval = FALSE}
+# Change the dimension names of our matrix to "lon" and "lat" 
+# Change the row and column names to the latitude and longitude values
+dimnames(temperature) <- 
+  list(lon = nc1_lon, lat = nc1_lat) 
+temperature
+
+# Transpose matrix
+temperature <- t(temperature)
+temperature
+
+```
+
+## Global attributes
+
+```{r global_attributes, eval = FALSE}
+# Retrieve global attributes
+nc1_atts <- ncatt_get(nc1, 0)
+nc1_atts
+
+# Close the connection to the nc file
+nc_close(nc1)
+```
+
+## Processing multiple netCDF files
+
+Function to:
+1. sequence through each .nc file
+2. open NetCDF file connection
+3. sequence through all variables to extract values/coordinates/time
+4. close NetCDF file connection
+5. set lat/lon coordinates to variable matrix dimensions
+6. transform/reshape variable matrix to tidy "long" format
+7. bind rows from each variable/file
+
+Result: Dataframe with (# of files [hours] * # of grids * # of variables [11]) observations and 5 variables (lon, lat, variable name, variable value, initial time)
+
+```{r nc_read_function}
+## Nested loop
+
+tidy_ncdf <- function(files) {
+     for (i in seq_along(files)) {
+      for (j in seq_along(var_list$var_row)) {   
+        # open a conneciton to the ith nc file
+        nc_store <- nc_open(paste0("C:/Users/slewa/Documents/data/heat/bragg_1979/", files[i]))
+        # store values from variables and atributes
+        nc_names <- paste("nc", var_list$var_name[j], sep = "_")
+        nc_names <- ncvar_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])
+        nc_time <- ncatt_get(nc_store, attributes(nc_store$var)$names[var_list$var_row[j]])$initial_time
+        nc_lat <- ncvar_get(nc_store, attributes(nc_store$dim)$names[1])
+        nc_lon <- ncvar_get(nc_store, attributes(nc_store$dim)$names[2])
+        # close the connection 
+        nc_close(nc_store)
+        # set the dimension names and values of your matrix to the appropriate latitude and longitude values
+        dimnames(nc_names) <- list(lon = nc_lon, lat = nc_lat)
+
+        store_nc_names <- nc_names %>% reshape2::melt(., value.name = var_list$var_name[j]) %>% 
+          gather(., key = variable, value = value, var_list$var_name[j]) %>% 
+          mutate(initial_time = nc_time)
+
+        # set the name of new variable and bind the new data to it
+        if (exists("var_data")) {
+            var_data <- bind_rows(var_data, store_nc_names)
+ 
+        }else{
+            var_data <- store_nc_names
+
+          }
+      }
+     }
+    return(var_data)
+}
+
+```
+
+## Run data processing function
+```{r run_function}
+
+nldas_data_1979 <- tidy_ncdf(file_list)
+as_tibble(nldas_data_1979)
+
+# Summary table (variable means)
+nldas_data %>% 
+  tibble::rowid_to_column() %>%
+   spread(variable, value) %>% 
+  group_by(lat, lon) %>% 
+   summarise_each(funs(mean(., na.rm = TRUE)))
+```
+
+## Assign NLDAS Grid ID's
+Fuzzy join used due to rounding differences at the fourth decimal place between NLDAS grid file centers and NetCDF download coordinates (all distances less than 0.00051 degrees). 
+```{r assign_grid_ids}
+# "base_nldas" file from bases.Rmd
+
+fuzzy <-
+nldas_data_1979 %>%
+  fuzzyjoin::difference_left_join(bragg_nldas, by = c("lon" = "centerx", "lat" = "centery"), max_dist = 0.001, distance_col = "distance") %>% 
+  dplyr::select(lon, lat, variable, value, initial_time, nldas_id, weight, lat.distance, lon.distance) %>%
+  filter(!is.na(nldas_id)) %>% 
+  mutate(initial_time = flipTime::AsDateTime(initial_time),
+         weight = as.numeric(weight))
+
+as_tibble(fuzzy)
+ 
+summary(fuzzy$lat.distance)
+summary(fuzzy$lon.distance)
+
+fuzzy %>% group_by(variable) %>% 
+  summarise(mean_value = mean(value))
+
+```
+
+
+## Plot data
+```{r plot}
+
+# Plot by Grid id
+fuzzy %>%
+  ggplot(aes(x = initial_time, y = value, color = nldas_id)) +
+  geom_line() +
+  facet_wrap(. ~ variable, scales = "free_y") +
+  theme_bw()
+
+
+# Plot by Grid id
+fuzzy %>%
+  filter(variable == "temperature") %>% 
+  ggplot(aes(x = initial_time, y = value, color = nldas_id)) +
+  geom_line() +
+  viridis::scale_fill_viridis() +
+  theme_bw()
+
+variables
+
+fuzzy %>% 
+  filter(variable == c("shortwave", "sp_humid", "merid_wind", "zonal_wind", "temperature", "pressure")) %>% 
+  spread(key = variable, value = value) %>% 
+  as_tibble()
+
+```
+
+

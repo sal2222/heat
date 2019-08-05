@@ -1,0 +1,110 @@
+---
+title: "nldas_wget"
+author: "SL"
+date: "August 5, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+#library(fuzzyjoin)
+```
+
+## NLDAS Data Source
+Earthdata.nasa.gov
+Collection: 
+NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H) at GES DISC
+Homepage: https://ldas.gsfc.nasa.gov/nldas/
+Metadata: https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002/doc/gribtab_NLDAS_FORA_hourly.002.txt
+
+## Initial Downloads
+
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i D:\nldas_urls\nldas_urls2.txt -P D:\nldas
+
+
+
+## Missed files
+
+`wget` skips over files after multiple attempts to conect with the server.
+
+
+
+1. Create list of downloaded file names
+2. Extract file names from full URL list (1979-present)
+3. Return all rows from full file list where there are not matching values in downloaded file list
+4. Create new URL list from missing file list
+
+Compare downloaded file names to url list
+```{r}
+# 1. Create list of downloaded file names
+
+dl_file_list <- list.files(path = "D:/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$") %>% 
+  as_tibble()
+
+dl_file_list %>% head()
+dl_file_list %>% tail()
+
+
+# 2. Extract file names from full URL list (1979-present)
+
+full_url_list <- read_lines("D:/nldas_urls/nldas_urls.txt") %>% 
+  as_tibble() %>% 
+  filter(!str_detect(value, "README"))
+
+full_url_list %>% head()
+full_url_list %>% tail()
+
+full_file_list <- read_lines("D:/nldas_urls/nldas_urls.txt") %>% 
+   stringr::str_extract("NLDAS_FORA0125_H.A[0-9]{8}.[0-9]{4}.002.grb.SUB.nc4") %>% 
+   na.omit() %>%   #na.omit removes README file
+   as_tibble()
+
+
+full_file_list %>% head()
+full_file_list %>% tail()
+
+```
+
+```{r}
+# dplyr::anti_join() 
+  # returns all rows from x where there are not matching values in y, keeping just  columns from x
+
+
+# 3. Return all rows from full file list where there are not matching values in downloaded file list
+missing_nldas <-
+  dplyr::anti_join(full_file_list, dl_file_list) %>% 
+  rename(file_name = value)
+
+missing_nldas %>% head()
+missing_nldas %>% tail()
+```
+
+```{r}
+# 4. Create new URL list from missing file list
+
+## Bind full URL list with full file name list
+full_file_df <- 
+  bind_cols(full_url_list, full_file_list) %>% 
+  rename(file_name = value1)
+
+full_file_df %>% head()
+full_file_df %>% tail()
+
+## Join missing file list with full file list; keep only missing URLs 
+
+missing_urls <- right_join(full_file_df, missing_nldas, by = "file_name") %>%
+  dplyr::select(value)
+
+
+## Write .txt file of missing URLs
+
+write_lines(missing_urls[["value"]], "C:/Users/slewa/Documents/data/heat/missing_urls.txt", na = "NA", append = FALSE)
+
+
+
+
+
+```
+

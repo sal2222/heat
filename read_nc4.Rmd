@@ -98,7 +98,7 @@ intersects <- intersects %>% left_join(dplyr::select(as_tibble(nldas_weights), c
 
 ```
 
-
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i D:\nldas_urls\nldas_urls2.txt -P D:\nldas
 
 ## Open 1st NetCDF file to inspect variable names
 ```{r extract_variable_names}
@@ -111,6 +111,7 @@ file_name <- file_list[1]
 
 # Open a connection to the first file in  list
 nc1 <- ncdf4::nc_open(file_name)
+tidync(file_name)
 
 var_names <- attributes(nc1$var)$names
 long_names <- vector("character", length = 11)
