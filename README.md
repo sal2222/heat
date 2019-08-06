@@ -26,3 +26,57 @@ This project includes code to download and process gridded climate data.
 - extract file names from full URL list
 - return all rows from full file list where there are not matching values in downloaded file list
 - create new URL list from missing file list
+
+
+## R Packages used: 
+
+### Data/ General
+library(tidyverse)
+library(rvest)
+library(devtools)
+library(furrr)
+library(purrr)
+library(purrrlyr)
+library(fuzzyjoin)
+
+### Spatial Data
+library(sf)
+library(rgeos)
+library(lwgeom)
+
+### Plotting and Mapping
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(tmap)
+library(viridis)
+library(cowplot)
+
+### Time
+library(lubridate)
+library(flipTime)
+
+### NetCDF
+library(ncdf4)
+library(raster)
+library(ncdump)
+library(RNetCDF)
+library(tidync)
+
+### Weather
+library(humidity)
+library(HeatStress) #devtools::install_github("anacv/HeatStress")
+library(weathermetrics)
+library(wbgt)
+library(tmap)
+
+
+
+
+
+
+
+
+
+
+
+
