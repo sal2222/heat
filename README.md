@@ -31,43 +31,43 @@ This project includes code to download and process gridded climate data.
 ## R Packages used: 
 
 ### Data/ General
-library(tidyverse)
-library(rvest)
-library(devtools)
-library(furrr)
-library(purrr)
-library(purrrlyr)
-library(fuzzyjoin)
+`tidyverse`
+`rvest`
+`devtools`
+`furrr`
+`purrr`
+`purrrlyr`
+`fuzzyjoin`
 
 ### Spatial Data
-library(sf)
-library(rgeos)
-library(lwgeom)
+`sf`
+`rgeos`
+`lwgeom`
 
 ### Plotting and Mapping
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(tmap)
-library(viridis)
-library(cowplot)
+`rnaturalearth`
+`rnaturalearthdata`
+`tmap`
+`viridis`
+`cowplot`
 
 ### Time
-library(lubridate)
-library(flipTime)
+`lubridate`
+`flipTime`
 
 ### NetCDF
-library(ncdf4)
-library(raster)
-library(ncdump)
-library(RNetCDF)
-library(tidync)
+`ncdf4`
+`raster`
+`ncdump`
+`RNetCDF`
+`tidync`
 
 ### Weather
-library(humidity)
-library(HeatStress) #devtools::install_github("anacv/HeatStress")
-library(weathermetrics)
-library(wbgt)
-library(tmap)
+`humidity`
+`HeatStress`
+`weathermetrics`
+`wbgt`
+`tmap`
 
 
 
