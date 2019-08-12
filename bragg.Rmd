@@ -1,0 +1,309 @@
+---
+title: "Fort Bragg Weather"
+author: "SL"
+date: "August 12, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(tidyverse)
+library(viridis)
+library(rvest)
+library(rgeos)
+library(lwgeom)
+library(purrr)
+library(purrrlyr)
+library(tmap)
+library(knitr)
+library(kableExtra)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
+library(lubridate)
+library(flipTime)
+library(fuzzyjoin)
+library(RNetCDF)
+library(tidync)
+library(furrr)
+library(humidity)
+library(HeatStress) #devtools::install_github("anacv/HeatStress")
+library(weathermetrics)
+library(wbgt)  #devtools::install_github("mdljts/wbgt")
+
+```
+
+## Load installation shapefile
+Accessed from: https://catalog.data.gov/dataset/military-installations-ranges-and-training-areas
+Metadata updated date: January 18, 2017
+```{r load_shapefile}
+#Ref: http://strimas.com/r/tidy-sf/
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+```
+
+## Select installation
+```{r select_sf_dataframe, warning = FALSE}
+## Create dataframe of active duty Army installations, including FSH (JBSA) and single Fort Benning row 
+
+bragg_sf <-
+  bases %>%
+    filter(site_name == "Fort Bragg")
+
+as_tibble(bragg_sf)
+```
+
+## Plot shapefile
+
+```{r plot_selected_bases}
+
+## Plot selected installations
+bragg_sf %>% 
+  ggplot() +
+     geom_sf() +
+     ggtitle("Fort Bragg, NC") +
+                theme_bw() +
+                theme(axis.text.x = element_text(size = rel(0.6)),
+                      axis.text.y = element_text(size = rel(0.6))) 
+```
+
+## Load NLDAS grids
+NLDAS grid shapefile from: https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_Grid_Reference.zip
+
+```{r load_nldas_grid}
+
+nldas_grid <- st_read("nldas_grids/NLDAS_Grid_Reference.shp") %>% 
+  janitor::clean_names()
+
+as_tibble(nldas_grid)
+
+```
+
+
+## NLDAS and Installation Grid Overlap and Weighted Averages
+
+```{r nldas_intersection_indiv}
+
+bragg_nldas <-
+  st_intersection(bragg_sf, nldas_grid) %>% 
+  mutate(area = sf::st_area(.),
+         weight = area / sum(area))
+
+bragg_intersects <-
+  nldas_grid %>% filter(lengths(st_intersects(., bragg_sf)) > 0)
+
+```
+
+```{r grid_weights}
+# Total Area
+sum(bragg_nldas$area)
+# Check sum of grid spatial area weights (should equal 1)
+sum(bragg_nldas$weight)
+# List intersected grid areas
+st_area(bragg_nldas) 
+
+bragg_nldas %>% 
+  as_tibble() %>% 
+  select(nldas_id, weight) %>%
+  mutate(weight = as.vector(weight),
+    percent = (weight / sum(weight)) * 100) %>% 
+  knitr::kable()
+```
+
+
+```{r plot_nldas}
+ggplot() + 
+  ggtitle("Fort Bragg NLDAS grids") +
+  geom_sf(data = bragg_intersects) +
+  geom_sf(data = bragg_nldas) +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  theme_bw()
+```
+
+## Full bounding box for installation
+```{r bounding_box_indiv, eval=FALSE, warning = FALSE}
+# Full bounding box of shapefile
+
+st_bbox(bragg_sf) %>% 
+  .[c("ymin", "xmin", "ymax", "xmax")]
+
+
+st_as_sfc(st_bbox(bragg_sf))
+
+```
+
+
+# Select bounding box
+
+Center coordinates from NLDAS grids x366y82 : x369y81
+
+```{r}
+select_bb_bragg <-
+bragg_nldas %>% 
+  filter(nldas_id %in% c("x366y82", "x369y81")) %>% 
+  select(centerx, centery) %>% 
+  as_tibble() %>% 
+  mutate(ymin = centery[1],
+         xmin = centerx[2],
+         ymax = centery[2],
+         xmax = centerx[1]) %>% 
+  select(ymin:xmax) %>% slice(1)
+
+select_bb_bragg
+
+bragg_nldas %>% 
+  as_tibble() %>% 
+  select(nldas_id, weight) %>%
+  slice(2:9) %>% 
+  mutate(weight = as.vector(weight),
+         mod_weight = weight / sum(weight),
+         percent = (weight / sum(weight)) * 100) %>% 
+  knitr::kable()
+  
+
+```
+
+
+## Air Force Weather Stations (All)
+
+```{r}
+sar <-
+  read.csv("D:/sar_weather/Lat_Long Coords for Army Garrisons.csv") %>% 
+  janitor::clean_names()
+
+sar_sf <-
+  st_as_sf(sar, coords = c("lon", "lat")) %>% 
+  st_set_crs(4326)
+
+sar_sf
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() +
+  geom_sf(data = sar_sf)
+
+ggplot() + 
+  geom_sf(data = world) +
+   geom_sf(data = sar_sf)
+
+```
+
+## AF weather station (select)
+```{r}
+
+bragg_sar <-
+  sar_sf %>% 
+    filter(name == "Fort Bragg")
+
+```
+
+
+```{r}
+ggplot() + 
+  ggtitle("Fort Bragg NLDAS grids") +
+  geom_sf(data = bragg_intersects) +
+  geom_sf(data = bragg_nldas) +
+  geom_text(data = bragg_nldas, aes(x = centerx, y = centery, label =  formatC(weight, format = "f", digits = 3)) , size = 3, position = position_nudge(y = -0.02)) +
+  geom_label(data = bragg_nldas, aes(x = centerx, y = centery, label = nldas_id), size = 3, fontface = "bold") +
+  geom_rect(data = select_bb_bragg, 
+            aes(xmin = xmin , xmax = xmax, ymin = ymin, ymax = ymax), color = "blue", fill = "transparent") +
+  geom_sf(data = bragg_sar) +
+  theme_bw()
+```
+
+# NLDAS-2 Data
+
+
+## Open 1st NetCDF file to inspect variable names
+```{r extract_variable_names}
+
+file_list <- list.files(path = "D:/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$")
+head(file_list)
+
+file_path <- paste0("D:/nldas/", file_list)
+head(file_path)
+
+file_name <- file_path[1]
+
+# Open a connection to the first file in  list
+nc1 <- ncdf4::nc_open(file_name)
+tidync(file_name)
+
+var_names <- attributes(nc1$var)$names
+var_names
+
+# Close the connection to the nc file
+nc_close(nc1)
+```
+
+## Function to read ncdf4 files
+- Filter by spatial bounding box coordinates
+- Extract desired variables from grid/dimension and combine in dataframe
+
+```{r read_ncdf_function}
+
+as.data.frame(select_bb_bragg)
+
+read_nc4 <- function(input_file) {
+  
+  nc4 <- tidync(input_file) %>%    
+    hyper_filter(
+      lat = between(lat, 35.0625, 35.1875 ),
+      lon = between(lon, -79.3125, -78.9375)) 
+  
+    a <-
+      nc4 %>% 
+        activate("D0,D1,D2,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(lon, lat, TMP, SPFH)
+
+    b <-
+      nc4 %>% 
+        activate("D0,D1,D3,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(-height_2, -time)
+
+    c <- 
+      nc4 %>% 
+        activate("D0,D1,D5") %>% 
+        hyper_tibble() %>% 
+        dplyr::select(-DLWRF, -CONVfrac, -PEVAP, -APCP, -time)
+
+    left_join(a, b, by = c("lat", "lon")) %>% 
+    left_join(., c, by = c("lat", "lon")) %>% 
+    mutate(date_time = 
+           file_name %>% 
+                stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>%
+                stringr::str_replace("(\\d{4})(\\d{2})(\\d{2})(\\.)(\\d{2})(\\d{2})$", "\\1-\\2-\\3 \\5:\\6\\:00") %>% 
+                  flipTime::AsDateTime(us.format = TRUE, time.zone = "UTC")) %>% 
+    janitor::clean_names() 
+
+}
+
+```
+
+## Map over function with each ncdf4 file
+
+```{r map_over_ncdf_function}
+
+plan(multiprocess)
+
+ptm <- proc.time()
+bragg_nldas_df <- furrr::future_map_dfr(file_path, read_nc4, .progress = TRUE) 
+proc.time() - ptm
+
+bragg_nldas_df
+
+```
+
+
+```
+
+
