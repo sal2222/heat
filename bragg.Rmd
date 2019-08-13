@@ -59,9 +59,7 @@ bragg_sf <-
 as_tibble(bragg_sf)
 ```
 
-## Plot shapefile
-
-```{r plot_selected_bases}
+```{r plot_selected_bases, include = FALSE}
 
 ## Plot selected installations
 bragg_sf %>% 
@@ -148,13 +146,13 @@ Center coordinates from NLDAS grids x366y82 : x369y81
 select_bb_bragg <-
 bragg_nldas %>% 
   filter(nldas_id %in% c("x366y82", "x369y81")) %>% 
-  select(centerx, centery) %>% 
+  dplyr::select(centerx, centery) %>% 
   as_tibble() %>% 
   mutate(ymin = centery[1],
          xmin = centerx[2],
          ymax = centery[2],
          xmax = centerx[1]) %>% 
-  select(ymin:xmax) %>% slice(1)
+  dplyr::select(ymin:xmax) %>% slice(1)
 
 select_bb_bragg
 
@@ -222,12 +220,22 @@ ggplot() +
 
 
 ## Open 1st NetCDF file to inspect variable names
+
+Full date range is from 1979 to present.
+
+Select from 1990 to present. 
 ```{r extract_variable_names}
 
-file_list <- list.files(path = "D:/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$")
+file_list <- list.files(path = "D:/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$") %>% 
+  as_tibble() %>% 
+  mutate(date = value %>% 
+           stringr::str_extract("[1-2][0-9]{7}") %>% as.integer()) %>% 
+  filter(date >= 19900101)
+ 
+
 head(file_list)
 
-file_path <- paste0("D:/nldas/", file_list)
+file_path <- paste0("D:/nldas/", file_list$value) 
 head(file_path)
 
 file_name <- file_path[1]
@@ -290,6 +298,8 @@ read_nc4 <- function(input_file) {
 ```
 
 ## Map over function with each ncdf4 file
+
+Extract hourly variables for 
 
 ```{r map_over_ncdf_function}
 
