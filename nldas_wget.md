@@ -153,12 +153,12 @@ missing_nldas %>% head()
     ## # A tibble: 6 x 1
     ##   file_name                                      
     ##   <chr>                                          
-    ## 1 NLDAS_FORA0125_H.A19790110.1900.002.grb.SUB.nc4
-    ## 2 NLDAS_FORA0125_H.A19790110.2000.002.grb.SUB.nc4
-    ## 3 NLDAS_FORA0125_H.A19790110.2100.002.grb.SUB.nc4
-    ## 4 NLDAS_FORA0125_H.A19790110.2200.002.grb.SUB.nc4
-    ## 5 NLDAS_FORA0125_H.A19790110.2300.002.grb.SUB.nc4
-    ## 6 NLDAS_FORA0125_H.A19790111.0000.002.grb.SUB.nc4
+    ## 1 NLDAS_FORA0125_H.A19790129.1100.002.grb.SUB.nc4
+    ## 2 NLDAS_FORA0125_H.A19790129.1200.002.grb.SUB.nc4
+    ## 3 NLDAS_FORA0125_H.A19790129.1300.002.grb.SUB.nc4
+    ## 4 NLDAS_FORA0125_H.A19790129.1400.002.grb.SUB.nc4
+    ## 5 NLDAS_FORA0125_H.A19790129.1500.002.grb.SUB.nc4
+    ## 6 NLDAS_FORA0125_H.A19790129.1600.002.grb.SUB.nc4
 
 ``` r
 missing_nldas %>% tail()
@@ -220,7 +220,46 @@ missing_urls <- right_join(full_file_df, missing_nldas, by = "file_name") %>%
 
 #write_lines(missing_urls[["value"]], "C:/Users/slewa/Documents/data/heat/missing_urls.txt", na = "NA", append = FALSE)
 
-write_lines(missing_urls[["value"]], "D:/nldas_urls/missing_urls.txt", na = "NA", append = FALSE)
+# write_lines(missing_urls[["value"]], "D:/nldas_urls/missing_urls.txt", na = "NA", append = FALSE)
 ```
+
+Plot dates of missing files
+---------------------------
+
+``` r
+missing_nldas %>%
+  mutate(date_time = file_name %>% stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}"),
+             year = stringr::str_sub(date_time, start = 1, end = 4),
+             month = stringr::str_sub(date_time, start = 5, end = 6),
+             day = stringr::str_sub(date_time, start = 7, end = 8),
+             hour = stringr::str_sub(date_time, start = 10, end = 11),
+             date = paste(year, month, day, sep = "-"),
+             time = paste0(str_sub(hour, start = 1, end = 2), ":", "00", ":", "00"), 
+             dates =  paste(date, time, sep = " ") %>% 
+              AsDateTime() ) %>% 
+  ggplot(data = ., aes(dates)) + 
+      geom_rug() +
+    theme_bw()
+```
+
+![](nldas_wget_files/figure-markdown_github/unnamed-chunk-4-1.png)
+
+``` r
+missing_nldas %>%
+  mutate(date_time = file_name %>% stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}"),
+             year = stringr::str_sub(date_time, start = 1, end = 4),
+             month = stringr::str_sub(date_time, start = 5, end = 6),
+             day = stringr::str_sub(date_time, start = 7, end = 8),
+             hour = stringr::str_sub(date_time, start = 10, end = 11),
+             date = paste(year, month, day, sep = "-"),
+             time = paste0(str_sub(hour, start = 1, end = 2), ":", "00", ":", "00"), 
+             dates =  paste(date, time, sep = " ") %>% 
+              AsDateTime() ) %>% 
+  ggplot(data = ., aes(dates)) + 
+      geom_histogram(bins = 40) +
+    theme_bw()
+```
+
+![](nldas_wget_files/figure-markdown_github/unnamed-chunk-4-2.png)
 
 wget --load-cookies C:.urs\_cookies --save-cookies C:.urs\_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i D:\_urls\_urls.txt -P D:

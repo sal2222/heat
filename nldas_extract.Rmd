@@ -116,9 +116,7 @@ read_nc4 <- function(input_file) {
         hyper_tibble() %>% 
         dplyr::select(PRES, DSWRF)
 
-    bind_cols(grid1, grid2, grid4) %>% 
-      
-    bind_cols(grid1, grid2, grid4) %>% 
+     bind_cols(grid1, grid2, grid4) %>% 
       mutate(date_time = 
               input_file %>% 
                 stringr::str_extract("[1-2][0-9]{7}\\.[0-9]{2}[0]{2}") %>%
@@ -142,16 +140,13 @@ Extract hourly variables for
 num_years <- 1
 num_obs <- num_years * 366 * 24
   
-nldas_df <- data.frame(lon = rep(NA, num_obs), lat = rep(NA, num_obs), TMP = rep(NA, num_obs),
-                             SPFH = rep(NA, num_obs),UGRD = rep(NA, num_obs),VGRD = rep(NA, num_obs),
-                             PRES = rep(NA, num_obs),DSWRF = rep(NA, num_obs),date_time = rep(NA, num_obs))
 
 
-year_range <- 1996:2019
+
+year_range <- 1998:2019
 
 plan(multiprocess)
 
-ptm <- proc.time()
 
 for (i in year_range)  {
  
@@ -160,15 +155,16 @@ for (i in year_range)  {
       dplyr::select(path) %>% as_vector()
   
   nldas_df <- data.frame(lon = rep(NA, num_obs), lat = rep(NA, num_obs), TMP = rep(NA, num_obs),
-                SPFH = rep(NA, num_obs),UGRD = rep(NA, num_obs),VGRD = rep(NA, num_obs),
-                PRES = rep(NA, num_obs),DSWRF = rep(NA, num_obs),date_time = rep(NA, num_obs))
+                             SPFH = rep(NA, num_obs),UGRD = rep(NA, num_obs),VGRD = rep(NA, num_obs),
+                             PRES = rep(NA, num_obs),DSWRF = rep(NA, num_obs),date_time = rep(NA, num_obs))
   
   nldas_df <- furrr::future_map_dfr(file_path, read_nc4, .id = NULL, .progress = TRUE)
   
   write.csv(nldas_df, paste0("D:/nldas_sites/", site, "_", i, ".csv"))
-  
+
+
 }            
-proc.time() - ptm
+
 
 
 

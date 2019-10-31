@@ -74,6 +74,11 @@ wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.u
 
 
 
+wget --load-cookies C:\Users\slewa\.urs_cookies --save-cookies C:\Users\slewa\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=sal2222 --ask-password --content-disposition -i C:\Users\slewa\Documents\data\heat\nldas_links_may2009.txt -P C:\Users\slewa\Documents\data\heat\nldas
+
+
+
+
 ## Create list of files in R  
 ```{r bragg_test_nldas}
 

@@ -1,0 +1,353 @@
+---
+title: "raster"
+author: "SL"
+date: "October 2, 2019"
+output: html_document
+---
+
+This markdown extracts variables from NLDAS-2 netCDF files by converting .nc4 to raster and selecting by raster cell position. It includes a function to extract a single file and applies purrr:map2_dfc to map over each file and each defined variable.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(tidyverse)
+library(viridis)
+library(rvest)
+library(rgeos)
+library(rgdal)
+library(lwgeom)
+library(purrr)
+library(purrrlyr)
+library(tmap)
+library(knitr)
+library(kableExtra)
+library(ncdf4)
+library(devtools)
+library(raster)
+library(ncdump)
+library(lubridate)
+library(flipTime)
+library(fuzzyjoin)
+library(RNetCDF)
+library(tidync)
+library(furrr)
+library(raster)
+library(easyNCDF)
+library(tmap)
+library(rts)
+library(tabularaster)
+library(velox)
+library(rgis)  # devtools::install_github("Pakillo/rgis")
+library(parallel)
+library(data.table)
+library(compiler)
+library(zoo)
+
+```
+
+## Load installation shapefile
+Accessed from: https://catalog.data.gov/dataset/military-installations-ranges-and-training-areas
+Metadata updated date: January 18, 2017
+
+
+```{r load_shapefile}
+#Ref: http://strimas.com/r/tidy-sf/
+bases <- st_read("installations_ranges/MIRTA_Boundaries.shp") %>% 
+  janitor::clean_names()
+
+bases %>% 
+ filter(component == "Army Active") 
+
+army_select <-
+  bases %>% 
+    dplyr::filter(.$site_name %in% c("Fort Benning GA", "Fort Bragg","Fort Campbell",
+                              "Fort Jackson", "Fort Polk", "Fort Hood",
+                              "Fort Stewart", "Fort Leonard Wood", "Fort Riley",
+                              "NTC and Fort Irwin", "Fort Bliss", "Fort Lewis",
+                              "Fort Sill", "Fort Huachuca", "Fort Carson", "Fort Gordon",
+                              "West Point Mil Reservation", "Fort Drum")) %>% 
+    mutate(centroid = st_centroid(geometry),
+           site_name = as.character(site_name)) %>% 
+    dplyr::select(c("site_name", "centroid"))
+
+
+```
+
+# NLDAS-2 Data
+
+```{r extract_variable_names}
+
+file_list <- list.files(path = "D:/nldas", pattern = "^.*\\.(nc4|NC4|Nc4|Nc4)$",
+                        full.names = FALSE) %>% 
+  as_tibble() %>% 
+  mutate(date = value %>% 
+           stringr::str_extract("[1-2][0-9]{7}") %>% lubridate::ymd(),
+         hour = value %>% 
+           stringr::str_extract("[0-2][0-9][0]{2}") %>% as_factor(),
+         path = paste0("D:/nldas/", value)) %>% 
+  dplyr::select(value, path, date, hour) %>% 
+  filter(date >= "1990-01-01")
+
+# Designate file name list by start position
+
+file_names <-
+  file_list$value %>%
+  as_tibble() %>% 
+  dplyr::slice(., 10:n()) %>% 
+  as_vector()
+
+
+# Generate file list of missing files
+
+saved_list <- list.files(path = "C:/Users/slewa/Documents/data/heat/nldas_raster/", pattern = "^.*\\.(rds)$",
+                        full.names = FALSE) %>% 
+  str_sub(end = -5L) %>% as_tibble()
+
+file_names <-
+  file_list %>% 
+    mutate(day_hour = 
+    paste0(
+      file_list$value %>%  stringr::str_extract("[1-2][0-9]{7}"),
+      "_",
+      file_list$value %>% stringr::str_extract("\\.[0-2][0-9][0]{2}") %>% str_sub(start = 2L))) %>% 
+    anti_join(., saved_list, by = c("day_hour" = "value")) %>% 
+  dplyr::select(value) %>% 
+  as_vector()
+
+
+# Select from "file_names"
+file_names <- file_names %>%
+  as_tibble() %>% 
+  dplyr::slice(., 41:n()) %>% 
+  as_vector()
+
+
+
+
+
+nldas_variables <- c("TMP", "SPFH", "PRES", "UGRD", "VGRD", "DSWRF")
+
+```
+
+## Raster: Read ncdf4 files
+
+```{r id_raster_cells}
+coordinates_matrix <- st_coordinates(army_select$centroid)
+
+# file_split <- split(file_list$path, ceiling(seq_along(file_list$path)/100))
+
+# file_list_small <- file_list$value[1:20]
+
+#r <- raster(file_list$path[1], varname = "TMP", quick = "TRUE")
+
+#cell <- tabularaster::cellnumbers(r, coordinates_matrix)
+#rm(r)
+
+#file_time <-
+#  paste0(
+#    file_list$path %>%  stringr::str_extract("[1-2][0-9]{7}"),
+#    "_",
+#    file_list$path %>% stringr::str_extract("[0-2][0-9][0]{2}"))
+```
+
+
+```{r extract_function}
+
+
+cells <- readRDS("D:/nldas/cells.rds")
+nldas_path <- "D:/nldas/"
+# sites <- army_select$site_name
+# cell_key <- cbind(sites, cells)
+# output_path <- "D:/nldas/nldas_raster/"
+
+# return single variable matrix column with date_hour as column name
+  file_names_by_year$year1990$value[1] %>% 
+    file.path(nldas_path, .) %>% 
+      raster::brick(varname = "TMP", quick = TRUE) %>%
+      raster::extract(., cells, df = FALSE) %>% 
+      magrittr::set_colnames(paste0(
+      file_names_by_year$year1990$value[1] %>%  stringr::str_extract("[1-2][0-9]{7}"),
+      "_",
+      file_names_by_year$year1990$value[1] %>% stringr::str_extract("[0-2][0-9][0]{2}")))
+  
+
+```
+
+```{r extract_function_map}
+
+# multiple variables
+
+  
+extract_single_file <- function(ncdf_single_file, nldas_var) {  
+  hourly_df <-   
+  ncdf_single_file %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_var, quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_var) %>%
+    as_tibble()
+}
+
+extract_single_file <- compiler::cmpfun(extract_single_file)
+
+
+
+ 
+
+
+# Execute map over files
+
+ptm <- proc.time()
+
+for (i in seq_along(file_names)) {
+map2_dfc(.x = file_names[[i]], .y = nldas_variables, .f = extract_single_file) %>% 
+write_rds(., path = paste0("C:/Users/slewa/Documents/data/heat/nldas_raster/",
+                           paste0(
+    file_names[[i]] %>%  stringr::str_extract("[1-2][0-9]{7}"),
+    "_",
+    file_names[[i]] %>% stringr::str_extract("\\.[0-2][0-9][0]{2}") %>% str_sub(start = 2L)),
+    ".rds"), 
+    compress = "none")
+}
+
+proc.time() - ptm
+
+
+
+# single instance test
+map2_dfc(.x = file_names[[1]], .y = nldas_variables, .f = extract_single_file) %>% 
+write_rds(., path = paste0("D:/nldas_raster/",
+                           paste0(
+    file_names[[1]] %>%  stringr::str_extract("[1-2][0-9]{7}"),
+    "_",
+    file_names[[1]] %>% stringr::str_extract("\\.[0-2][0-9][0]{2}") %>% str_sub(start = 2L)),
+    ".rds"), 
+    compress = "none")
+
+read_rds("D:/nldas_raster/19900101_0000.rds") %>% class()
+
+
+ncdump::NetCDF("D:/nldas/NLDAS_FORA0125_H.A20090510.2000.002.grb.SUB.nc4")
+```
+
+corrupt files: 20090509_0500 to 20090510_2000 (41 files)
+
+```{r}
+raster_list <- list.files(path = "D:/nldas_raster",pattern = ".rds") %>%
+  map(read_rds)
+```
+
+
+
+```{r long_exract_function}
+
+  
+################################################################3  
+extract_variables_from_ncdf_file <- function(ncdf_filename_input) {
+  cbind(
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[1], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[1]),
+    
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[2], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[2]),
+    
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[3], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[3]),
+    
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[4], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[4]),
+    
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[5], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[5]),
+    
+    ncdf_filename_input %>% 
+      file.path(nldas_path, .) %>% 
+        raster::brick(varname = nldas_variables[6], quick = TRUE) %>%
+        raster::extract(., cells, df = FALSE) %>% 
+        magrittr::set_colnames(nldas_variables[6])
+  )
+} 
+
+# generate byte-compiled versions of functions
+extract_variables_from_ncdf_file <- compiler::cmpfun(extract_variables_from_ncdf_file)
+```
+
+
+
+```{r split_nldas_file_list}
+# split file list by year (from 1990 - 2019); ~8,760 hourly files per year
+
+
+
+files_by_year <-
+  file_list %>% 
+    split(lubridate::year(.$date)) 
+
+file_names_by_year <-
+  lapply(files_by_year, `[`, 1)
+names(file_names_by_year) <- paste0("year", names(file_names_by_year) )
+
+files_by_yearmon <-
+  file_list %>% 
+    split(zoo::as.yearmon(.$date)) 
+names(files_by_yearmon) <- janitor::make_clean_names(names(files_by_yearmon))
+
+
+file_names_by_yearmon <-
+  lapply(files_by_yearmon, `[`, 1) %>% 
+  lapply(., as_vector)
+
+file_names_by_yearmon[[1]][1] 
+
+```
+
+
+
+
+```{r plot_raster_cells}
+
+centroid <- army_select$centroid %>%
+  as_tibble() %>% 
+  dplyr::mutate(site_name = army_select$site_name) %>% 
+  st_as_sf()
+
+
+raster_cell <- 
+  xyFromCell(r, cell$cell_) %>%
+  as_tibble() %>% 
+  mutate(site_name = army_select$site_name) %>% 
+  st_as_sf(coords = c("x", "y"))
+
+raster_polygons <-
+  xyFromCell(r, cell_polygons$cell_) %>%
+  as_tibble() %>% 
+  st_as_sf(coords = c("x", "y"))
+
+tm_shape(army_select) +
+    tm_borders() +
+    tm_fill(col = "blue", alpha = 0.1) +
+tm_shape(centroid) +
+  tm_dots() +
+tm_shape(raster_cell) +
+  tm_dots(col = "red") +
+tm_facets(by = "site_name")
+
+```
+
+
